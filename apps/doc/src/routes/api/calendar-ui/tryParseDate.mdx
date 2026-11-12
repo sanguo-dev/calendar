@@ -1,0 +1,52 @@
+---
+title: tryParseDate
+lastUpdated: false
+---
+
+# tryParseDate
+
+解析日期；非法输入返回 `null`，不抛错。
+
+## 引入
+
+```ts
+import { tryParseDate } from "@sanguo-dev/calendar-ui";
+```
+
+## 签名
+
+```ts
+tryParseDate(value: CalendarDateValue | null | undefined): Date | null;
+```
+
+## 用法
+
+```ts
+tryParseDate("2026/10/1"); // Date(2026, 9, 1)
+tryParseDate("2026-10-01"); // Date(2026, 9, 1)
+tryParseDate(day); // onSelect 拿到的 CalendarDay
+tryParseDate(input.value); // 输入没打完时返回 null
+
+calendar.select(tryParseDate(input.value) ?? calendar.getSelected());
+```
+
+## 参数
+
+| 参数    | 类型                                     | 默认 | 说明                                                     |
+| ------- | ---------------------------------------- | ---- | -------------------------------------------------------- |
+| `value` | `CalendarDateValue \| null \| undefined` | -    | `Date`、日期字符串，或带 `year` / `month` / `day` 的对象 |
+
+## 返回值
+
+成功返回本地时区的 `Date`，只保留年月日；以下情况一律返回 `null`：
+
+- `null` / `undefined`；
+- 空串、空白串、格式不匹配的字符串；
+- 不存在的日期（如 `2026-02-30`）、月份越界（如 `2026-13-01`）；
+- 无效的 `Date`（`NaN`）。
+
+## 说明
+
+- `tryParseDate` 是 [`formatDate`](/api/calendar-ui/formatDate) 的反向操作，接受同一套日期形态；
+- 解析规则与 `CalendarDateInput` 一致，见 [CalendarDate](/api/calendar-ui/types/calendar-date)；
+- 想拿到具体错误信息时直接调用实例方法（如 `select()`），它会抛 `TypeError` / `RangeError`。

@@ -30,10 +30,10 @@ interface CalendarInstance {
   setRange(start: CalendarDateInput | null, end?: CalendarDateInput | null): void;
   clearRange(): void;
   getSelected(): Date | null;
-  show(): void;
-  hide(): void;
+  open(): void;
+  close(options?: CalendarCloseOptions): void;
   toggle(): void;
-  isVisible(): boolean;
+  isOpen(): boolean;
   getMinDate(): Date | null;
   setMinDate(date: CalendarDateInput | null): void;
   getMaxDate(): Date | null;
@@ -71,14 +71,14 @@ interface CalendarInstance {
 | [setRange](/api/calendar-ui/instance/setRange)       | `void`          | 设置范围     |
 | [clearRange](/api/calendar-ui/instance/clearRange)   | `void`          | 清空范围     |
 
-显示：
+打开 / 关闭：
 
-| 方法                                             | 返回      | 说明         |
-| ------------------------------------------------ | --------- | ------------ |
-| [show](/api/calendar-ui/instance/show)           | `void`    | 显示整个日历 |
-| [hide](/api/calendar-ui/instance/hide)           | `void`    | 隐藏整个日历 |
-| [toggle](/api/calendar-ui/instance/toggle)       | `void`    | 切换显示状态 |
-| [isVisible](/api/calendar-ui/instance/isVisible) | `boolean` | 当前是否可见 |
+| 方法                                       | 返回      | 说明           |
+| ------------------------------------------ | --------- | -------------- |
+| [open](/api/calendar-ui/instance/open)     | `void`    | 打开日历       |
+| [close](/api/calendar-ui/instance/close)   | `void`    | 关闭并处理焦点 |
+| [toggle](/api/calendar-ui/instance/toggle) | `void`    | 切换打开状态   |
+| [isOpen](/api/calendar-ui/instance/isOpen) | `boolean` | 当前是否打开   |
 
 边界与主题：
 
@@ -94,7 +94,9 @@ interface CalendarInstance {
 
 ## 说明
 
-- 显示 / 隐藏只切换根节点的 `hidden`，不重建 DOM；
+- 打开 / 关闭只切换根节点的 `hidden`，不重建 DOM；
+- 关闭统一走 `close()`：收起年月选择层、关闭日期格 popup、隐藏，并把焦点还给 `open()` 之前的元素（可用 `restoreFocus` 覆盖）；
+- 0.3.0 起 `show()` / `hide()` / `isVisible()` 分别改名为 `open()` / `close()` / `isOpen()`，旧名不再导出；
 - `header: false` 时不渲染头部和月份选择层，也没有头部显隐相关方法；
 - 边界变化会把当前选中日期与展示月份夹到新的可选范围；
 - `destroy()` 会移除根节点与全部事件监听，之后不要再调用实例方法。

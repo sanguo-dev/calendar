@@ -147,6 +147,38 @@ const instance = createCalendarUI(container, {
 
 `CalendarDateInput = Date | string`，字符串支持 `2026-10-01`、`2026-10-1`、`2026/10/01`、`2026/10/1`，按本地年月日解析，不经过 `new Date(string)`。
 
+解析和格式化用两个纯函数，不依赖实例：
+
+```ts
+import { formatDate, tryParseDate } from "@sanguo-dev/calendar-ui";
+
+formatDate("2026/10/1"); // "2026-10-01"
+formatDate(day, "YYYY年M月D日"); // "2026年10月1日"
+tryParseDate(input.value); // 非法输入返回 null，不抛错
+```
+
+- `formatDate(value, pattern?)` 默认 `YYYY-MM-DD`，格式串支持 `YYYY` / `YY` / `MM` / `M` / `DD` / `D`；
+- `tryParseDate(value)` 是 `CalendarDateInput` 的不抛错版本，适合直接接输入框的 `input` 事件；
+- 两者都接受 `Date`、日期字符串，或 `onSelect` 里那种带 `year` / `month` / `day` 的对象；
+- 都只关心年月日，时分秒会被丢弃。
+
+## 打开与关闭
+
+```ts
+const instance = createCalendarUI(container);
+
+instance.open();
+instance.close(); // 收起年月选择层、关闭 popup、隐藏，并把焦点还给触发元素
+instance.close({ restoreFocus: input });
+instance.isOpen(); // 当前是否打开
+instance.toggle();
+```
+
+- `close()` 是唯一的关闭入口，`toggle()` 关闭时也走它；
+- `open()` 由关闭变为打开时记住当前焦点元素，`close()` 默认还给它；
+- 自动还焦点只在焦点原本位于日历内（含日期格 popup）时生效，不会抢外部焦点；
+- `restoreFocus: false` 不处理焦点，传元素则总是聚焦它。
+
 ## 日期约束
 
 ```ts

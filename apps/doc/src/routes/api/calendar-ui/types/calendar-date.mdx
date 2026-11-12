@@ -18,6 +18,8 @@ import type { CalendarDate, CalendarDateInput } from "@sanguo-dev/calendar-ui";
 ```ts
 type CalendarDateInput = Date | string;
 
+type CalendarDateValue = CalendarDateInput | Pick<CalendarDate, "year" | "month" | "day">;
+
 interface CalendarDate {
   year: number;
   month: number;
@@ -49,6 +51,8 @@ interface CalendarDate {
 ```
 
 月、日允许一位数，分隔符必须前后一致。解析时只保留年月日，时、分、秒与毫秒会被丢弃。
+
+[`formatDate`](/api/calendar-ui/formatDate) 与 [`tryParseDate`](/api/calendar-ui/tryParseDate) 除了上面两种形态，还接受带 `year` / `month` / `day` 的对象（`CalendarDateValue`），可以直接把 `onSelect` 拿到的 `CalendarDay` 丢进去。
 
 ## 错误
 

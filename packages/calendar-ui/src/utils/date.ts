@@ -19,6 +19,33 @@ export const toDateOnly = function (date: Date): Date {
   return createDate(date.getFullYear(), date.getMonth() + 1, date.getDate());
 };
 
+/**
+ * 用年月日构造日期
+ *
+ * 月日越界、或者这一天不存在（例如 2 月 30 日）时抛错；
+ * `source` 只用于错误信息，默认拼成 Y-M-D。
+ */
+export const dateFromParts = function (
+  year: number,
+  month: number,
+  day: number,
+  path: string,
+  source = `${year}-${month}-${day}`,
+): Date {
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) {
+    throw new TypeError(`[calendar-ui] ${path} 的年、月、日必须是整数`);
+  }
+  if (month < 1 || month > 12) {
+    throw new RangeError(`[calendar-ui] ${path} 月份必须在 1-12 之间`);
+  }
+
+  const date = createDate(year, month, day);
+  if (date.getFullYear() !== year || date.getMonth() + 1 !== month || date.getDate() !== day) {
+    throw new RangeError(`[calendar-ui] ${path} 不是有效日期: ${source}`);
+  }
+  return date;
+};
+
 /** 解析日期输入。 */
 export const parseDateInput = function (value: CalendarDateInput, path = "date"): Date {
   if (value instanceof Date) {
@@ -42,15 +69,7 @@ export const parseDateInput = function (value: CalendarDateInput, path = "date")
   const year = Number(match[1]);
   const month = Number(match[3]);
   const day = Number(match[4]);
-  if (month < 1 || month > 12) {
-    throw new RangeError(`[calendar-ui] ${path} 月份必须在 1-12 之间`);
-  }
-
-  const date = createDate(year, month, day);
-  if (date.getFullYear() !== year || date.getMonth() + 1 !== month || date.getDate() !== day) {
-    throw new RangeError(`[calendar-ui] ${path} 不是有效日期: ${value}`);
-  }
-  return date;
+  return dateFromParts(year, month, day, path, value);
 };
 
 /** 把日期转成可比较的数字 key：YYYYMMDD */

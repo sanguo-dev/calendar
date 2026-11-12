@@ -82,6 +82,14 @@ export interface CalendarDate {
   inCurrentMonth: boolean;
 }
 
+/**
+ * `formatDate()` / `tryParseDate()` 接受的日期形态
+ *
+ * 在 `CalendarDateInput` 之外再多接受一个带年月日的对象，
+ * 方便直接把 `onSelect` 拿到的 `CalendarDay` 丢进去。
+ */
+export type CalendarDateValue = CalendarDateInput | Pick<CalendarDate, "year" | "month" | "day">;
+
 /** 格子左上角的小标记，例如「休」「班」 */
 export interface CalendarBadge {
   /** 显示文字 */
@@ -277,6 +285,21 @@ export interface CalendarOptions<TData = null> {
   adapter?: CalendarAdapter<TData>;
 }
 
+/** 关闭日历的选项 */
+export interface CalendarCloseOptions {
+  /**
+   * 关闭后把焦点还到哪
+   *
+   * - 不传：还给日历由隐藏变为可见时的焦点元素（通常是触发它的输入框）；
+   * - 传 `HTMLElement`：聚焦该元素；
+   * - 传 `false`：不处理焦点。
+   *
+   * 自动还焦点只在焦点原本就在日历内（含日期格 popup）时生效；
+   * 显式传入元素时总是聚焦它。元素已脱离 DOM 时忽略。
+   */
+  restoreFocus?: HTMLElement | false;
+}
+
 /** 返回的实例 */
 export interface CalendarInstance {
   /** 日历根元素，方便外部定位或再挂样式 */
@@ -299,14 +322,22 @@ export interface CalendarInstance {
   clearRange(): void;
   /** 当前选中的日期 */
   getSelected(): Date | null;
-  /** 显示整个日历 */
-  show(): void;
-  /** 隐藏整个日历 */
-  hide(): void;
-  /** 切换整个日历的显示状态 */
+  /**
+   * 打开日历
+   *
+   * 由关闭变为打开时记住当前焦点元素，供 `close()` 还回去。
+   */
+  open(): void;
+  /**
+   * 关闭日历
+   *
+   * 收起年月选择层、关闭日期格 popup、隐藏根节点，并按需把焦点还给触发元素。
+   */
+  close(options?: CalendarCloseOptions): void;
+  /** 打开时关闭，关闭时打开 */
   toggle(): void;
-  /** 整个日历当前是否可见 */
-  isVisible(): boolean;
+  /** 日历当前是否打开 */
+  isOpen(): boolean;
   /** 当前最小可选日期，未设置时为 null */
   getMinDate(): Date | null;
   /** 设置最小可选日期，传 null 取消 */

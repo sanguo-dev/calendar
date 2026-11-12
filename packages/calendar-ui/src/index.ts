@@ -1,11 +1,14 @@
 export { createCalendarUI } from "./calendar";
+export { formatDate, tryParseDate } from "./date";
 export { enUS, locales, resolveLocale, zhCN } from "./locales";
 export type {
   CalendarAdapter,
   CalendarAnimationOptions,
   CalendarBadge,
+  CalendarCloseOptions,
   CalendarDate,
   CalendarDateInput,
+  CalendarDateValue,
   CalendarDay,
   CalendarInstance,
   CalendarLocale,

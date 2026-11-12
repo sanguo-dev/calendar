@@ -1,11 +1,11 @@
 ---
-title: show
+title: open
 lastUpdated: false
 ---
 
-# calendar.show
+# calendar.open
 
-显示整个日历。
+打开日历。
 
 ## 引入
 
@@ -18,13 +18,13 @@ const calendar = createCalendarUI(container);
 ## 签名
 
 ```ts
-calendar.show(): void;
+calendar.open(): void;
 ```
 
 ## 用法
 
 ```ts
-calendar.show();
+calendar.open();
 ```
 
 ## 参数
@@ -38,3 +38,5 @@ calendar.show();
 ## 说明
 
 把根节点的 `hidden` 置为 `false`，不重建 DOM、不改变选中状态。
+
+由关闭变为打开时，会记住当时的焦点元素，供 [`close()`](/api/calendar-ui/instance/close) 默认还回去；原本就打开时不记录。

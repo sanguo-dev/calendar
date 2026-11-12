@@ -1,11 +1,11 @@
 ---
-title: isVisible
+title: isOpen
 lastUpdated: false
 ---
 
-# calendar.isVisible
+# calendar.isOpen
 
-判断整个日历当前是否可见。
+判断日历当前是否打开。
 
 ## 引入
 
@@ -18,15 +18,15 @@ const calendar = createCalendarUI(container);
 ## 签名
 
 ```ts
-calendar.isVisible(): boolean;
+calendar.isOpen(): boolean;
 ```
 
 ## 用法
 
 ```ts
-calendar.isVisible(); // true
-calendar.hide();
-calendar.isVisible(); // false
+calendar.isOpen(); // true
+calendar.close();
+calendar.isOpen(); // false
 ```
 
 ## 参数

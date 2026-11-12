@@ -1,0 +1,60 @@
+---
+title: close
+lastUpdated: false
+---
+
+# calendar.close
+
+关闭日历：收起年月选择层、关闭日期格 popup、隐藏根节点，并按需把焦点还给触发元素。
+
+## 引入
+
+```ts
+import { createCalendarUI } from "@sanguo-dev/calendar-ui";
+
+const calendar = createCalendarUI(container);
+```
+
+## 签名
+
+```ts
+calendar.close(options?: CalendarCloseOptions): void;
+```
+
+## 用法
+
+```ts
+calendar.close();
+
+// 关掉后把焦点还给触发它的输入框
+calendar.close({ restoreFocus: input });
+
+// 只隐藏，不动焦点
+calendar.close({ restoreFocus: false });
+```
+
+## 参数
+
+| 参数           | 类型                   | 默认 | 说明             |
+| -------------- | ---------------------- | ---- | ---------------- |
+| `restoreFocus` | `HTMLElement \| false` | 自动 | 关闭后的焦点落点 |
+
+`restoreFocus` 的三种取值：
+
+| 取值          | 行为                                                       |
+| ------------- | ---------------------------------------------------------- |
+| 不传          | 还给 [`open()`](/api/calendar-ui/instance/open) 记录的元素 |
+| `HTMLElement` | 聚焦该元素；元素已脱离 DOM 时忽略                          |
+| `false`       | 不处理焦点                                                 |
+
+## 返回值
+
+`void`。
+
+## 说明
+
+- `close()` 是唯一的关闭入口，与 [`open()`](/api/calendar-ui/instance/open) 成对；[`toggle()`](/api/calendar-ui/instance/toggle) 打开时也走它，状态用 [`isOpen()`](/api/calendar-ui/instance/isOpen) 查询；
+- `open()` 由关闭变为打开时会记住当时的焦点元素，`close()` 默认还给它；
+- 自动还焦点只在焦点原本位于日历内（含日期格 popup）时生效，不会抢外部焦点；
+- 关年月选择层会同时解除它给其他区域加的 `inert` 和外部点击 / `Esc` 监听；
+- 幂等：已经关闭时再调用不抛错。

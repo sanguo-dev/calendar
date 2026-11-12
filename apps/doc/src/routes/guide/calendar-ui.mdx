@@ -93,6 +93,20 @@ type CalendarDateInput = Date | string;
 
 按本地年月日解析；不存在的日期抛 `RangeError`，格式错误抛 `TypeError`。
 
+读写字符串用两个导出的纯函数：
+
+```ts
+import { formatDate, tryParseDate } from "@sanguo-dev/calendar-ui";
+
+formatDate("2026/10/1"); // "2026-10-01"
+formatDate(day, "YYYY年M月D日"); // 格式串支持 YYYY / YY / MM / M / DD / D
+tryParseDate(input.value); // 非法输入返回 null，不抛错
+```
+
+- `formatDate` 只处理年月日，时分秒会被丢弃；
+- `tryParseDate` 是 `CalendarDateInput` 的不抛错版本，适合接输入框的 `input` 事件；
+- 两者都额外接受 `onSelect` 里那种带 `year` / `month` / `day` 的对象。
+
 ## 日期约束
 
 ```ts
@@ -265,20 +279,23 @@ createCalendarUI(container, {
 
 ## CalendarInstance
 
-| 成员                                             | 说明                       |
-| ------------------------------------------------ | -------------------------- |
-| `el`                                             | 根元素                     |
-| `setMonth(year, month)`                          | 跳到某月                   |
-| `getMonth()`                                     | 当前年月                   |
-| `prevMonth()` / `nextMonth()`                    | 前后翻月                   |
-| `select(date)`                                   | 选中日期                   |
-| `getSelected()`                                  | 单选选中；范围模式返回起点 |
-| `getRange()` / `setRange()` / `clearRange()`     | 范围                       |
-| `getMinDate()` / `setMinDate()`                  | 最小日期                   |
-| `getMaxDate()` / `setMaxDate()`                  | 最大日期                   |
-| `show()` / `hide()` / `toggle()` / `isVisible()` | 显示状态                   |
-| `getTheme()` / `setTheme()`                      | 主题                       |
-| `destroy()`                                      | 销毁                       |
+| 成员                                           | 说明                       |
+| ---------------------------------------------- | -------------------------- |
+| `el`                                           | 根元素                     |
+| `setMonth(year, month)`                        | 跳到某月                   |
+| `getMonth()`                                   | 当前年月                   |
+| `prevMonth()` / `nextMonth()`                  | 前后翻月                   |
+| `select(date)`                                 | 选中日期                   |
+| `getSelected()`                                | 单选选中；范围模式返回起点 |
+| `getRange()` / `setRange()` / `clearRange()`   | 范围                       |
+| `getMinDate()` / `setMinDate()`                | 最小日期                   |
+| `getMaxDate()` / `setMaxDate()`                | 最大日期                   |
+| `open()` / `close()` / `toggle()` / `isOpen()` | 打开 / 关闭                |
+| `close(options?)`                              | 关闭并收起子层、还原焦点   |
+| `getTheme()` / `setTheme()`                    | 主题                       |
+| `destroy()`                                    | 销毁                       |
+
+`close()` 是唯一的关闭入口：收起年月选择层、关闭日期格 popup、隐藏根节点，并默认把焦点还给 `open()` 之前的元素。`toggle()` 关闭时也走同一条路径，状态用 `isOpen()` 查询。
 
 ## CalendarAdapter
 

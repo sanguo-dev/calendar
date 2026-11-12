@@ -44,39 +44,149 @@ const popupOf = function (): HTMLElement {
 const renderDay = (day: CalendarDate): readonly DayPopupItem[] =>
   day.month === 10 && day.day === 1 ? [["全天", "内容"]] : [];
 
-describe("实例显示 / 隐藏", () => {
-  it("show / hide / toggle / isVisible 同步 root.hidden", () => {
+describe("实例打开 / 关闭", () => {
+  it("open / close / toggle / isOpen 同步 root.hidden", () => {
     const { instance } = create();
-    expect(instance.isVisible()).toBe(true);
+    expect(instance.isOpen()).toBe(true);
     expect(instance.el.hidden).toBe(false);
 
-    instance.hide();
-    expect(instance.isVisible()).toBe(false);
+    instance.close();
+    expect(instance.isOpen()).toBe(false);
     expect(instance.el.hidden).toBe(true);
 
-    instance.show();
-    expect(instance.isVisible()).toBe(true);
+    instance.open();
+    expect(instance.isOpen()).toBe(true);
     expect(instance.el.hidden).toBe(false);
 
     instance.toggle();
-    expect(instance.isVisible()).toBe(false);
+    expect(instance.isOpen()).toBe(false);
     instance.toggle();
-    expect(instance.isVisible()).toBe(true);
+    expect(instance.isOpen()).toBe(true);
   });
 
-  it("hide / toggle 隐藏时会关闭已打开的 popup", () => {
+  it("close / toggle 关闭时会关闭已打开的 popup", () => {
     const { instance } = create({ initialDate: "2026-10-01", popup: { render: renderDay } });
     const cell = cellOf(instance.el, "2026-10-1");
 
     cell.click();
     expect(popupOf().hidden).toBe(false);
-    instance.hide();
+    instance.close();
     expect(popupOf().hidden).toBe(true);
 
-    instance.show();
+    instance.open();
     cell.click();
     instance.toggle();
     expect(popupOf().hidden).toBe(true);
+  });
+});
+
+describe("实例关闭与焦点", () => {
+  const pickerOf = (instance: CalendarInstance): HTMLElement => {
+    const picker = instance.el.querySelector<HTMLElement>(".cui__picker");
+    if (!picker) throw new Error("missing picker");
+    return picker;
+  };
+
+  const yearButtonOf = (instance: CalendarInstance): HTMLButtonElement => {
+    const button = instance.el.querySelector<HTMLButtonElement>('[data-part="year"]');
+    if (!button) throw new Error("missing year button");
+    return button;
+  };
+
+  const inputOf = (): HTMLInputElement => {
+    const input = document.createElement("input");
+    document.body.append(input);
+    return input;
+  };
+
+  it("close 收起年月选择层并解除 inert", () => {
+    const { instance } = create();
+    const viewport = instance.el.querySelector<HTMLElement>(".cui__viewport");
+    const picker = pickerOf(instance);
+    const yearButton = yearButtonOf(instance);
+
+    yearButton.click();
+    expect(picker.classList.contains("is-open")).toBe(true);
+    expect(viewport?.inert).toBe(true);
+
+    instance.close();
+    expect(picker.classList.contains("is-open")).toBe(false);
+    expect(viewport?.inert).toBe(false);
+    expect(yearButton.getAttribute("aria-expanded")).toBe("false");
+    expect(instance.isOpen()).toBe(false);
+  });
+
+  it("close / toggle 走同一条关闭路径", () => {
+    const { instance } = create();
+    const picker = pickerOf(instance);
+
+    yearButtonOf(instance).click();
+    instance.close();
+    expect(picker.classList.contains("is-open")).toBe(false);
+
+    instance.open();
+    yearButtonOf(instance).click();
+    instance.toggle();
+    expect(picker.classList.contains("is-open")).toBe(false);
+    expect(instance.isOpen()).toBe(false);
+  });
+
+  it("close 把焦点还给 open 之前的元素", () => {
+    const { instance } = create({ initialDate: "2026-10-01" });
+    const input = inputOf();
+
+    instance.close();
+    input.focus();
+    instance.open();
+
+    const cell = cellOf(instance.el, "2026-10-1");
+    cell.focus();
+    instance.close();
+    expect(document.activeElement).toBe(input);
+  });
+
+  it("close 可以显式指定焦点落点", () => {
+    const { instance } = create({ initialDate: "2026-10-01" });
+    const input = inputOf();
+
+    instance.close({ restoreFocus: input });
+    expect(document.activeElement).toBe(input);
+  });
+
+  it("restoreFocus: false 不动焦点", () => {
+    const { instance } = create({ initialDate: "2026-10-01" });
+    const input = inputOf();
+
+    instance.close();
+    input.focus();
+    instance.open();
+    cellOf(instance.el, "2026-10-1").focus();
+
+    instance.close({ restoreFocus: false });
+    expect(document.activeElement).not.toBe(input);
+  });
+
+  it("焦点在日期格 popup 里时也会还给触发元素", () => {
+    const { instance } = create({ initialDate: "2026-10-01", popup: { render: renderDay } });
+    const input = inputOf();
+
+    instance.close();
+    input.focus();
+    instance.open();
+
+    cellOf(instance.el, "2026-10-1").click();
+    expect(popupOf().hidden).toBe(false);
+
+    instance.close();
+    expect(popupOf().hidden).toBe(true);
+    expect(document.activeElement).toBe(input);
+  });
+
+  it("重复 close 不抛错", () => {
+    const { instance } = create();
+    instance.close();
+    expect(() => instance.close()).not.toThrow();
+    expect(instance.isOpen()).toBe(false);
   });
 });
 

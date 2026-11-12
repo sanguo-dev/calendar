@@ -22,10 +22,12 @@ bun add @sanguo-dev/calendar-ui
 
 ## 函数
 
-| 导出                                                  | 签名                                                                                                         | 说明                 |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | -------------------- |
-| [createCalendarUI](/api/calendar-ui/createCalendarUI) | `createCalendarUI<TData = null>(container: HTMLElement, options?: CalendarOptions<TData>): CalendarInstance` | 在容器中创建日历实例 |
-| [resolveLocale](/api/calendar-ui/resolveLocale)       | `resolveLocale(locale?: CalendarLocale \| CalendarLocaleName): CalendarLocale`                               | 解析语言包名称或对象 |
+| 导出                                                  | 签名                                                                                                         | 说明                    |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------------- |
+| [createCalendarUI](/api/calendar-ui/createCalendarUI) | `createCalendarUI<TData = null>(container: HTMLElement, options?: CalendarOptions<TData>): CalendarInstance` | 在容器中创建日历实例    |
+| [formatDate](/api/calendar-ui/formatDate)             | `formatDate(value: CalendarDateValue, pattern?: string): string`                                             | 把日期格式化成字符串    |
+| [tryParseDate](/api/calendar-ui/tryParseDate)         | `tryParseDate(value: CalendarDateValue \| null \| undefined): Date \| null`                                  | 解析日期，非法返回 null |
+| [resolveLocale](/api/calendar-ui/resolveLocale)       | `resolveLocale(locale?: CalendarLocale \| CalendarLocaleName): CalendarLocale`                               | 解析语言包名称或对象    |
 
 ## 语言包
 
@@ -45,7 +47,7 @@ bun add @sanguo-dev/calendar-ui
 | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | [CalendarOptions](/api/calendar-ui/CalendarOptions)                   | 创建配置                                                                                            |
 | [CalendarInstance](/api/calendar-ui/instance)                         | 实例接口                                                                                            |
-| [CalendarDate](/api/calendar-ui/types/calendar-date)                  | 日期格中的公历日期；同页还有 `CalendarDateInput`                                                    |
+| [CalendarDate](/api/calendar-ui/types/calendar-date)                  | 日期格中的公历日期；同页还有 `CalendarDateInput`、`CalendarDateValue`                               |
 | [CalendarDay](/api/calendar-ui/types/calendar-day)                    | 日期格数据                                                                                          |
 | [CalendarAdapter](/api/calendar-ui/types/calendar-adapter)            | 日期格装饰适配器；同页还有 `MonthInput`、`DayDecoration`、`CalendarBadge`、`SubtitleRenderer`       |
 | [CalendarLocale](/api/calendar-ui/types/calendar-locale)              | 语言包；同页还有 `CalendarLocaleName`                                                               |

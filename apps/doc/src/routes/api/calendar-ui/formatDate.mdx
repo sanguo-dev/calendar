@@ -1,0 +1,59 @@
+---
+title: formatDate
+lastUpdated: false
+---
+
+# formatDate
+
+把日期格式化成字符串，默认 `YYYY-MM-DD`。
+
+## 引入
+
+```ts
+import { formatDate } from "@sanguo-dev/calendar-ui";
+```
+
+## 签名
+
+```ts
+formatDate(value: CalendarDateValue, pattern?: string): string;
+```
+
+## 用法
+
+```ts
+formatDate("2026/10/1"); // "2026-10-01"
+formatDate(new Date(2026, 9, 1)); // "2026-10-01"
+formatDate(day); // onSelect 拿到的 CalendarDay
+formatDate(day, "YYYY年M月D日"); // "2026年10月1日"
+formatDate(day, "DD.MM.YYYY"); // "01.10.2026"
+```
+
+## 参数
+
+| 参数      | 类型                | 默认           | 说明                                                     |
+| --------- | ------------------- | -------------- | -------------------------------------------------------- |
+| `value`   | `CalendarDateValue` | -              | `Date`、日期字符串，或带 `year` / `month` / `day` 的对象 |
+| `pattern` | `string`            | `"YYYY-MM-DD"` | 格式串                                                   |
+
+格式串支持的占位符：
+
+| 占位符 | 含义       | 示例（2026-10-01） |
+| ------ | ---------- | ------------------ |
+| `YYYY` | 四位年份   | `2026`             |
+| `YY`   | 两位年份   | `26`               |
+| `MM`   | 两位月份   | `10`               |
+| `M`    | 不补零月份 | `10`               |
+| `DD`   | 两位日     | `01`               |
+| `D`    | 不补零日   | `1`                |
+
+## 返回值
+
+`string`。
+
+## 说明
+
+- 只处理年月日，时分秒会被丢弃，按本地时区取值；
+- 占位符之外的字符原样保留，不支持转义；
+- 非法输入抛 `TypeError` / `RangeError`，不会静默返回空串；需要不抛错的版本用 [`tryParseDate`](/api/calendar-ui/tryParseDate)；
+- `CalendarDateValue` 见 [CalendarDate](/api/calendar-ui/types/calendar-date)。
