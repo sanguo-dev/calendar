@@ -1,5 +1,15 @@
 # @sanguo-dev/calendar-ui
 
+## 0.3.0
+
+### Minor Changes
+
+- 新增 formatDate() / tryParseDate()：前者按 YYYY-MM-DD 或自定义格式串输出，后者是 CalendarDateInput 的不抛错版本，便于直接接输入框。
+  实例新增
+- close(options?)：统一关闭年月选择层与日期格 popup、隐藏根节点，并可把焦点还给触发元素。hide() 与隐藏方向的 toggle() 现在走同一条关闭路径，不再遗留选择层的 inert 与外部点击监听。
+
+- open() / close() / close() isOpen 代替 show(), hide(), isVisible()
+
 ## 0.2.0
 
 ### Minor Changes

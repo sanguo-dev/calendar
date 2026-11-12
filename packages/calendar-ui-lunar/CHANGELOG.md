@@ -1,5 +1,16 @@
 # @sanguo-dev/calendar-ui-lunar
 
+## 0.3.0
+
+### Minor Changes
+
+- 同步更新
+
+### Patch Changes
+
+- Updated dependencies
+  - @sanguo-dev/calendar-ui@0.3.0
+
 ## 0.2.0
 
 ### Minor Changes
