@@ -1,5 +1,16 @@
 # @sanguo-dev/calendar-ui-lunar
 
+## 0.4.0
+
+### Minor Changes
+
+- createLunarAdapter() 返回的适配器方法随上游改名为 contentMonth，返回类型改为 (DayContent<LunarResult> | null)[]；createCalendarUI({ adapter }) 的用法不变。
+
+### Patch Changes
+
+- Updated dependencies
+  - @sanguo-dev/calendar-ui@0.4.0
+
 ## 0.3.2
 
 ### Patch Changes
