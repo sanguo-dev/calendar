@@ -219,23 +219,8 @@
   justify-self: center;
 }
 
-/* 显式深色 */
-.cui[data-theme="dark"] {
-  --cui-bg: #161b22;
-  --cui-fg: #e6edf3;
-  --cui-muted: #8b949e;
-  --cui-border: #30363d;
-  --cui-accent: #1f6feb;
-  --cui-accent-fg: #ffffff;
-  --cui-rest: #ff7b72;
-  --cui-popup-dot: #3fb950;
-  --cui-hover: #21262d;
-  --cui-icon: var(--cui-icon-dark);
-
-  color-scheme: dark;
-}
-
-/* auto：优先跟随最近的 data-theme="dark" */
+/* 显式深色；auto 跟随最近的 data-theme="dark" */
+.cui[data-theme="dark"],
 [data-theme="dark"] .cui[data-theme="auto"] {
   --cui-bg: #161b22;
   --cui-fg: #e6edf3;

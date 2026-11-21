@@ -103,6 +103,15 @@ export const createHeader = function (options: HeaderOptions): HeaderHandle {
       prev.el.classList.toggle("is-nav-hidden", !visible);
       next.el.classList.toggle("is-nav-hidden", !visible);
     },
+    setNavMode: (mode: "month" | "year") => {
+      if (mode === "year") {
+        prev.setLabel(options.locale.prevYearPage ?? options.locale.prevMonth);
+        next.setLabel(options.locale.nextYearPage ?? options.locale.nextMonth);
+        return;
+      }
+      prev.setLabel(options.locale.prevMonth);
+      next.setLabel(options.locale.nextMonth);
+    },
     setTitleExpanded: (expanded: boolean) => {
       const value = String(expanded);
       if (options.onYearClick) yearButton.setAttribute("aria-expanded", value);

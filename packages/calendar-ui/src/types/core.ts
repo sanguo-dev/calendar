@@ -205,8 +205,8 @@ export interface RendererDeps<TData = null> {
 export interface ActionContext<TData = null> {
   config: CalendarConfig<TData>;
   state: CalendarState;
+  /** 展示月数只从 bounds 读，避免同一个值存两份 */
   bounds: CalendarBounds;
-  monthCount: 1 | 2;
   root: HTMLElement;
   panels: readonly CalendarPanel<TData>[];
   collapse: CollapseHandle<TData>;

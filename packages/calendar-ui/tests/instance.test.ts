@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it } from "vite-plus/test";
 import type { CalendarDate, CalendarInstance, DayPopupItem } from "../src/index.ts";
 import { createCalendarUI } from "../src/index.ts";
+import { cellOf, popupOf } from "./helpers.ts";
 
 const hosts: HTMLElement[] = [];
 const instances: CalendarInstance[] = [];
@@ -27,18 +28,6 @@ const create = function (options: Parameters<typeof createCalendarUI>[1] = {}): 
   const instance = createCalendarUI(target, options);
   instances.push(instance);
   return { instance, host: target };
-};
-
-const cellOf = function (root: HTMLElement, key: string): HTMLButtonElement {
-  const cell = root.querySelector<HTMLButtonElement>(`.cui__day[data-date="${key}"]`);
-  if (!cell) throw new Error(`missing cell ${key}`);
-  return cell;
-};
-
-const popupOf = function (): HTMLElement {
-  const popup = document.querySelector<HTMLElement>(".cui__popup");
-  if (!popup) throw new Error("missing popup");
-  return popup;
 };
 
 const renderDay = (day: CalendarDate): readonly DayPopupItem[] =>

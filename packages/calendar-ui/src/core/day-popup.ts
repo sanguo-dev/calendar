@@ -6,7 +6,7 @@ import type {
   DayPopupStringItem,
   ResolvedCalendarPopupOptions,
 } from "../types";
-import { createDate, dateKey } from "../utils/date";
+import { createDate, dateKey, parseStringKey } from "../utils/date";
 import { node } from "../utils/dom";
 
 /** 从月视图复制到 popup 的 CSS 变量 */
@@ -40,21 +40,15 @@ const readDay = function (cell: HTMLElement): CalendarDate | null {
   const key = cell.dataset.date;
   if (!key) return null;
 
-  // 比 split + map 少两次数组分配；只在日期真正变化时才会走到这里
-  const first = key.indexOf("-");
-  const second = key.indexOf("-", first + 1);
-  if (first < 0 || second < 0) return null;
-
-  const year = Number(key.slice(0, first));
-  const month = Number(key.slice(first + 1, second));
-  const day = Number(key.slice(second + 1));
-  if (!year || !month || !day) return null;
+  // 格式解析集中在 parseStringKey，和 dateStringKey 是同一对
+  const parts = parseStringKey(key);
+  if (parts === null) return null;
 
   return {
-    year,
-    month,
-    day,
-    date: createDate(year, month, day),
+    year: parts.year,
+    month: parts.month,
+    day: parts.day,
+    date: createDate(parts.year, parts.month, parts.day),
     inCurrentMonth: !cell.classList.contains("is-outside"),
   };
 };
@@ -515,8 +509,6 @@ export const createDayPopup = function (options: CreateDayPopupOptions): DayPopu
   el.addEventListener("pointerleave", onPopupLeave);
   el.addEventListener("focusout", onPopupFocusOut);
 
-  updateIndicators();
-
   return {
     close,
     destroy: () => {
@@ -565,7 +557,9 @@ export const createDayPopup = function (options: CreateDayPopupOptions): DayPopu
     },
     isOpen: () => isOpen,
     refreshTheme: () => {
-      applyTheme();
+      // 关着的时候不用算：openAt 显示之前会自己 applyTheme 一次。
+      // 多实例同时 setTheme 时，这里的强制样式重算会变成 O(n) 次全文档重算。
+      if (isOpen) applyTheme();
     },
   };
 };

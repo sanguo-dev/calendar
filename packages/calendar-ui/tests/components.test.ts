@@ -1103,6 +1103,7 @@ describe("选择层控制器", () => {
     const header = {
       el: document.createElement("div"),
       setNavVisible: vi.fn(),
+      setNavMode: vi.fn(),
       setTitleExpanded: vi.fn(),
       refresh: vi.fn(),
       focusTitle: vi.fn(),
@@ -1177,6 +1178,30 @@ describe("选择层控制器", () => {
     next.click();
     expect(instance.getMonth()).toEqual(before);
     expect(picker.classList.contains("is-open")).toBe(true);
+  });
+
+  it("年份层翻页时左右按钮换成按年分组的文案", () => {
+    const container = document.createElement("div");
+    document.body.append(container);
+    const instance = createCalendarUI(container, { initialDate: "2026-10-15" });
+    cleanups.push(() => {
+      instance.destroy();
+      container.remove();
+    });
+    const yearButton = instance.el.querySelector<HTMLButtonElement>('[data-part="year"]')!;
+    const navs = [...instance.el.querySelectorAll<HTMLButtonElement>(".cui__header .cui__nav")];
+    const prev = navs[0]!;
+    const next = navs[1]!;
+
+    expect(prev.getAttribute("aria-label")).toBe("上个月");
+
+    yearButton.click();
+    expect(prev.getAttribute("aria-label")).toBe("上一组年份");
+    expect(next.getAttribute("aria-label")).toBe("下一组年份");
+
+    document.body.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
+    expect(prev.getAttribute("aria-label")).toBe("上个月");
+    expect(next.getAttribute("aria-label")).toBe("下个月");
   });
 
   it("焦点不在选择层里时关闭不会抢焦点", () => {

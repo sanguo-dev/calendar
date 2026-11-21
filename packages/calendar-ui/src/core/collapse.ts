@@ -1,5 +1,5 @@
 import type { CalendarDay, CollapseHandle, CollapseOptions } from "../types";
-import { dateKey } from "../utils/date";
+import { dateKey, dateKeyOf } from "../utils/date";
 import { createArrowIcon, node } from "../utils/dom";
 
 /** 创建折叠控制器。 */
@@ -49,7 +49,7 @@ export const createCollapse = function <TData = null>(
       targets.forEach((target) => {
         const dayIndex = days.findIndex(
           (day) =>
-            day.year * 10000 + day.month * 100 + day.day === target &&
+            dateKeyOf(day.year, day.month, day.day) === target &&
             (monthCount === 1 || day.inCurrentMonth),
         );
         if (dayIndex >= 0) rows.add(Math.floor(dayIndex / 7));

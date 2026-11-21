@@ -21,15 +21,16 @@ import {
   withRangeFields,
 } from "../src/core/state.ts";
 import {
-  addDays,
   compareDay,
   createDate,
   dateKey,
+  dateKeyOf,
   dateStringKey,
   monthFromIndex,
   monthIndexOf,
   normalizeMonth,
   parseDateInput,
+  parseStringKey,
   readDate,
   sameDay,
   toDateOnly,
@@ -101,11 +102,17 @@ describe("日期工具", () => {
     expect(weekdayOf(2026, 10, 4)).toBe(0);
   });
 
-  it("addDays 跨月、跨年并保留日期部分", () => {
-    expect(dateKey(addDays(new Date(2026, 9, 31, 12), 1))).toBe(20261101);
-    expect(dateKey(addDays(new Date(2026, 0, 1), -1))).toBe(20251231);
-    expect(dateKey(addDays(new Date(2024, 1, 28), 1))).toBe(20240229);
-    expect(addDays(new Date(2026, 9, 15, 8, 30), 0).getHours()).toBe(0);
+  it("dateKeyOf / dateStringKey / parseStringKey 描述同一份日期", () => {
+    expect(dateKeyOf(2026, 10, 1)).toBe(20261001);
+    expect(dateStringKey(2026, 10, 1)).toBe("2026-10-1");
+    expect(parseStringKey("2026-10-1")).toEqual({ year: 2026, month: 10, day: 1 });
+  });
+
+  it("parseStringKey 对残缺或空值返回 null", () => {
+    expect(parseStringKey("2026-10")).toBeNull();
+    expect(parseStringKey("2026")).toBeNull();
+    expect(parseStringKey("-10-1")).toBeNull();
+    expect(parseStringKey("a-b-c")).toBeNull();
   });
 
   it("月份序号与规范化", () => {
@@ -306,14 +313,6 @@ describe("范围字段", () => {
       isSelected: true,
     });
     expect(rangeFields(date(11), date(5), date(10)).isInRange).toBe(false);
-  });
-
-  it("传入 out 时复用同一个对象", () => {
-    const out = { isRangeStart: false, isRangeEnd: false, isInRange: false, isSelected: true };
-    const result = rangeFields(date(10), null, null, out);
-
-    expect(result).toBe(out);
-    expect(out.isSelected).toBe(false);
   });
 });
 

@@ -10,6 +10,7 @@ import type {
 import { createCalendarUI } from "../src/index.ts";
 import { zhCN } from "../src/index.ts";
 import { createDayPopup } from "../src/core/day-popup.ts";
+import { cellOf, itemsOf, popupOf } from "./helpers.ts";
 
 const cleanups: Array<() => void> = [];
 
@@ -39,24 +40,8 @@ const create = function (
   return instance;
 };
 
-const cellOf = function (root: HTMLElement, key: string): HTMLButtonElement {
-  const cell = root.querySelector<HTMLButtonElement>(`.cui__day[data-date="${key}"]`);
-  if (!cell) throw new Error(`missing cell ${key}`);
-  return cell;
-};
-
-const popupOf = function (): HTMLElement {
-  const popup = document.querySelector<HTMLElement>(".cui__popup");
-  if (!popup) throw new Error("missing popup");
-  return popup;
-};
-
 const isOpen = function (): boolean {
   return !popupOf().hidden;
-};
-
-const itemsOf = function (): string[] {
-  return [...popupOf().querySelectorAll(".cui__popup-item")].map((item) => item.textContent ?? "");
 };
 
 const pointer = function (target: EventTarget, type: string, related?: Node | null): void {

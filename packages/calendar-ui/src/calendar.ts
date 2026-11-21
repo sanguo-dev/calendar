@@ -120,7 +120,6 @@ export function createCalendarUI<TData = null>(
     config,
     state,
     bounds,
-    monthCount,
     root,
     panels,
     collapse,

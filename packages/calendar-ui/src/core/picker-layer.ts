@@ -19,6 +19,7 @@ export const createPickerLayer = function (options: PickerLayerOptions): PickerL
     const hadFocus = picker.el.contains(doc.activeElement);
     picker.close();
     header.setNavVisible(true);
+    header.setNavMode("month");
     syncNav();
     header.setTitleExpanded(false);
     header.refresh();
@@ -54,6 +55,7 @@ export const createPickerLayer = function (options: PickerLayerOptions): PickerL
     picker.el.style.top = `${header.el.offsetTop + header.el.offsetHeight}px`;
     picker.open(mode);
     header.setNavVisible(mode === "year");
+    header.setNavMode(mode);
     syncNav();
     header.setTitleExpanded(true);
     header.refresh();

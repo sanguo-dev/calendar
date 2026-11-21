@@ -68,8 +68,13 @@ const commitSingle = function <TData = null>(
       day = days.find((item) => item.year === year && item.month === month && item.day === date);
     }
   } else {
-    // 42 个 day 对象不再长期保留；网格从 DOM 状态组装选中格，并只改 1-2 个格子
-    day = ctx.panels[0]?.grid.selectDay(dateKey(target));
+    // 42 个 day 对象不再长期保留；网格从 DOM 状态组装选中格，并只改 1-2 个格子。
+    // 点击路径本来就知道下标，直接用，省掉一次 42 格扫描。
+    const grid = ctx.panels[0]?.grid;
+    day =
+      options.index === undefined
+        ? grid?.selectDay(dateKey(target))
+        : grid?.selectAt(options.index);
   }
 
   if (day) ctx.config.onSelect?.(day);
@@ -137,7 +142,7 @@ export const selectDay = function <TData = null>(
 const seekMonth = function <TData = null>(ctx: ActionContext<TData>, target: Date): void {
   const first = monthIndexOf(ctx.state.year, ctx.state.month);
   const targetIndex = monthIndexOf(target.getFullYear(), target.getMonth() + 1);
-  if (targetIndex >= first && targetIndex <= first + ctx.monthCount - 1) return;
+  if (targetIndex >= first && targetIndex <= first + ctx.bounds.monthCount - 1) return;
 
   const next = clampStartMonth(ctx.bounds, target.getFullYear(), target.getMonth() + 1);
   ctx.state.year = next.year;

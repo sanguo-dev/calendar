@@ -37,10 +37,8 @@ export const createPanels = function <TData = null>(
   });
 };
 
-export interface MountPanel {
-  weekdays: { el: HTMLElement };
-  viewport: HTMLElement;
-}
+/** 挂载只用到星期表头和月份列，网格由 panel 自己拿着 */
+export type MountPanel = Pick<CalendarPanel, "weekdays" | "viewport">;
 
 export interface MountCalendarOptions {
   root: HTMLElement;

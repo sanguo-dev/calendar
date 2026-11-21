@@ -72,9 +72,14 @@ export const parseDateInput = function (value: CalendarDateInput, path = "date")
   return dateFromParts(year, month, day, path, value);
 };
 
+/** 用年月日拼出可比较的数字 key：YYYYMMDD，不分配 Date */
+export const dateKeyOf = function (year: number, month: number, day: number): number {
+  return year * 10000 + month * 100 + day;
+};
+
 /** 把日期转成可比较的数字 key：YYYYMMDD */
 export const dateKey = function (date: Date): number {
-  return date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
+  return dateKeyOf(date.getFullYear(), date.getMonth() + 1, date.getDate());
 };
 
 /** 拼日期字符串 key：YYYY-M-D，分隔符与 parseDateInput 接受的格式一致 */
@@ -82,11 +87,22 @@ export const dateStringKey = function (year: number, month: number, day: number)
   return `${year}-${month}-${day}`;
 };
 
-/** 加减天数，按本地日历计算 */
-export const addDays = function (date: Date, amount: number): Date {
-  const next = toDateOnly(date);
-  next.setDate(next.getDate() + amount);
-  return next;
+/** 解析 dateStringKey 写出的 YYYY-M-D；格式不对时返回 null */
+export const parseStringKey = function (
+  key: string,
+): { year: number; month: number; day: number } | null {
+  // 只拆字符串，不建 Date：这里每换一个月要跑 42 次
+  const first = key.indexOf("-");
+  if (first < 0) return null;
+  const second = key.indexOf("-", first + 1);
+  if (second < 0) return null;
+
+  const year = Number(key.slice(0, first));
+  const month = Number(key.slice(first + 1, second));
+  const day = Number(key.slice(second + 1));
+  if (!year || !month || !day) return null;
+
+  return { year, month, day };
 };
 
 /** 比较两个日期，只比年月日 */

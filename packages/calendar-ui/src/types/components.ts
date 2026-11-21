@@ -13,6 +13,8 @@ export interface NavOptions {
 /** 头部左右切换按钮的句柄 */
 export interface NavHandle {
   el: HTMLButtonElement;
+  /** 换无障碍名称：月份层是「上个月」，年份层是「上一组」 */
+  setLabel(label: string): void;
   /** 设置禁用状态，边界月份时使用 */
   setDisabled(disabled: boolean): void;
   destroy(): void;
@@ -55,6 +57,8 @@ export interface HeaderHandle {
   setNavDisabled(prevDisabled: boolean, nextDisabled: boolean): void;
   /** 显示 / 隐藏左右按钮（月份层里不需要） */
   setNavVisible(visible: boolean): void;
+  /** 切换左右按钮的无障碍名称：年份层翻 12 年，不能再念「上个月」 */
+  setNavMode(mode: "month" | "year"): void;
   /** 同步标题按钮的展开状态（选择层打开时为 true） */
   setTitleExpanded(expanded: boolean): void;
   /** 把焦点还给标题按钮 */
@@ -115,6 +119,12 @@ export interface GridHandle<TData = null> {
    * 42 个 day 对象不再长期保留；这里从格子当前的 DOM 状态组装。
    */
   selectDay(key: number): CalendarDay<TData> | undefined;
+  /**
+   * 点选已知下标的格子：跳过 42 格扫描，直接更新那两个格子
+   *
+   * 点击路径本来就知道下标，不用再从日期 key 反查。
+   */
+  selectAt(index: number): CalendarDay<TData> | undefined;
   /**
    * 折叠时只显示指定行；传 null 显示全部 6 行
    *

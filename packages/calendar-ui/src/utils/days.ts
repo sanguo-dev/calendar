@@ -1,6 +1,6 @@
 import type { CalendarDate, CalendarDay, DayDecoration, WeekStartsOn } from "../types";
 import type { BuildDaysOptions } from "../types";
-import { createDate, dateKey, dateStringKey, weekdayOf } from "./date";
+import { createDate, dateKey, dateKeyOf, dateStringKey, weekdayOf } from "./date";
 
 /** 某个年月 1 号是星期几（0 为周日） */
 export const firstWeekdayOf = function (year: number, month: number): number {
@@ -62,7 +62,7 @@ export const buildDays = function <TData = null>(
     const subtitle =
       customSubtitle === null || customSubtitle === undefined ? adapterSubtitle : customSubtitle;
 
-    const key = date.year * 10000 + date.month * 100 + date.day;
+    const key = dateKeyOf(date.year, date.month, date.day);
     const isDisabled = options.isDisabled?.(date.date) ?? false;
     const isRangeStart = key === startKey;
     const isRangeEnd = key === endKey;

@@ -7,6 +7,7 @@ import type {
   DayPopupItem,
 } from "../src/index.ts";
 import { createCalendarUI } from "../src/index.ts";
+import { cellOf, dotOf, itemsOf, popupOf } from "./helpers.ts";
 
 const cleanups: Array<() => void> = [];
 
@@ -30,28 +31,6 @@ const create = function (
     host.remove();
   });
   return instance;
-};
-
-const cellOf = function (root: HTMLElement, key: string): HTMLButtonElement {
-  const cell = root.querySelector<HTMLButtonElement>(`.cui__day[data-date="${key}"]`);
-  if (!cell) throw new Error(`missing cell ${key}`);
-  return cell;
-};
-
-const dotOf = function (root: HTMLElement, key: string): HTMLElement {
-  const dot = cellOf(root, key).querySelector<HTMLElement>(".cui__day-dot");
-  if (!dot) throw new Error(`missing dot ${key}`);
-  return dot;
-};
-
-const popupOf = function (): HTMLElement {
-  const popup = document.querySelector<HTMLElement>(".cui__popup");
-  if (!popup) throw new Error("missing popup");
-  return popup;
-};
-
-const itemsOf = function (): string[] {
-  return [...popupOf().querySelectorAll(".cui__popup-item")].map((item) => item.textContent ?? "");
 };
 
 /** 只有 10 月 1 日、5 日有数据 */

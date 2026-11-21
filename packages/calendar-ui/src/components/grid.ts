@@ -1,5 +1,5 @@
 import type { CalendarDay, GridHandle, GridOptions } from "../types";
-import { createDate } from "../utils/date";
+import { createDate, dateKeyOf } from "../utils/date";
 import { node, setRowVisibility } from "../utils/dom";
 import { prefersReducedMotion, readCssDuration, readCssEasing } from "../utils/motion";
 import { createDayCell, createDayMarks, setDay, setDayState, type DayMarks } from "./day";
@@ -71,25 +71,28 @@ class CalendarGrid<TData = null> implements GridHandle<TData> {
         continue;
       }
 
-      this.keys[i] = day.year * 10000 + day.month * 100 + day.day;
+      this.keys[i] = dateKeyOf(day.year, day.month, day.day);
       this.data[i] = day.data;
       setDay(cell, day, this.marks, i);
       if (day.isSelected && this.selectedIndex < 0) this.selectedIndex = i;
     }
   }
 
-  /** 点选：只更新旧选中 / 新选中的格子，并返回新选中格的完整数据 */
+  /** 点选：按日期 key 找到格子，再走 selectAt */
   selectDay(key: number): CalendarDay<TData> | undefined {
-    let nextIndex = -1;
     for (let i = 0; i < CELL_COUNT; i++) {
-      if ((this.keys[i] ?? 0) === key) {
-        nextIndex = i;
-        break;
-      }
+      if ((this.keys[i] ?? 0) === key) return this.selectAt(i);
     }
-    if (nextIndex < 0) return undefined;
+    return undefined;
+  }
 
-    if (this.selectedIndex !== nextIndex) {
+  /** 点选已知下标的格子：只更新旧选中 / 新选中的格子，并返回新选中格的完整数据 */
+  selectAt(index: number): CalendarDay<TData> | undefined {
+    // 先取新格子的状态；取不到（空格或已换月）就不动旧选中
+    const next = this.readDay(index);
+    if (!next) return undefined;
+
+    if (this.selectedIndex !== index) {
       const previousIndex = this.selectedIndex;
       if (previousIndex >= 0) {
         const previous = this.readDay(previousIndex);
@@ -99,14 +102,16 @@ class CalendarGrid<TData = null> implements GridHandle<TData> {
         }
       }
 
-      const next = this.readDay(nextIndex);
-      const nextCell = this.cells[nextIndex];
-      if (!next || !nextCell) return undefined;
-      setDayState(nextCell, { ...next, isSelected: true }, this.marks, nextIndex);
-      this.selectedIndex = nextIndex;
+      const nextCell = this.cells[index];
+      if (!nextCell) return undefined;
+      setDayState(nextCell, { ...next, isSelected: true }, this.marks, index);
+      this.selectedIndex = index;
+
+      // next 是写状态之前读的，选中位要跟着刚写入的状态
+      return { ...next, isSelected: true };
     }
 
-    return this.readDay(nextIndex);
+    return next;
   }
 
   setVisibleRows(rows: readonly number[] | null, animate = true): void {
