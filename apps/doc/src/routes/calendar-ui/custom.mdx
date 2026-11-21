@@ -57,7 +57,7 @@ function getCompanyRest(date: Date): CompanyRest | null {
 
 const adapter: CalendarAdapter<CompanyRest> = {
   id: "company-holidays",
-  decorateMonth({ days }) {
+  contentMonth({ days }) {
     return days.map((date) => {
       const rest = getCompanyRest(date.date);
       if (!rest) return null;
@@ -75,4 +75,4 @@ const adapter: CalendarAdapter<CompanyRest> = {
 createCalendarUI(container, { adapter });
 ```
 
-适配器接口、`DayDecoration` 等字段见 [CalendarAdapter](/api/calendar-ui/types/calendar-adapter)。
+适配器接口、`DayContent` 等字段见 [CalendarAdapter](/api/calendar-ui/types/calendar-adapter)。

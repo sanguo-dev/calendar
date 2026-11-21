@@ -10,18 +10,22 @@ const STATE_RANGE_START = 8;
 const STATE_RANGE_END = 16;
 const STATE_IN_RANGE = 32;
 const STATE_DISABLED = 64;
+const STATE_POPUP = 128;
 
 /** 每个网格自己的格子状态；用数组代替「格子 → 对象」的 WeakMap */
 export interface DayMarks {
   readonly masks: Int32Array;
   readonly labels: string[];
+  /** popup 的 role 是不是 dialog：决定有内容时写不写 aria-haspopup */
+  readonly popupDialog: boolean;
 }
 
 /** 创建 42 格的 mark 存储。 */
-export const createDayMarks = function (count: number): DayMarks {
+export const createDayMarks = function (count: number, popupDialog = false): DayMarks {
   return {
     masks: new Int32Array(count),
     labels: Array.from({ length: count }, () => ""),
+    popupDialog,
   };
 };
 
@@ -99,7 +103,8 @@ export const setDayState = function (
     (day.isRangeStart ? STATE_RANGE_START : 0) |
     (day.isRangeEnd ? STATE_RANGE_END : 0) |
     (day.isInRange ? STATE_IN_RANGE : 0) |
-    (day.isDisabled ? STATE_DISABLED : 0);
+    (day.isDisabled ? STATE_DISABLED : 0) |
+    (day.popup === null ? 0 : STATE_POPUP);
 
   // 42 个格子里每次通常只有 1-2 个真的变了，其余直接跳过
   const previousMask = marks.masks[index] ?? 0;
@@ -132,6 +137,13 @@ export const setDayState = function (
 
   if ((diff & (STATE_OUTSIDE | STATE_DISABLED)) !== 0) {
     cell.tabIndex = day.inCurrentMonth && !day.isDisabled ? 0 : -1;
+  }
+
+  if ((diff & STATE_POPUP) !== 0) {
+    const hasPopup = day.popup !== null;
+    cell.classList.toggle("is-dot", hasPopup);
+    if (hasPopup && marks.popupDialog) cell.setAttribute("aria-haspopup", "dialog");
+    else cell.removeAttribute("aria-haspopup");
   }
 
   if (labelChanged) cell.setAttribute("aria-label", day.ariaLabel);

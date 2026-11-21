@@ -59,15 +59,15 @@ describe("适配器缓存", () => {
   it("同一个月再次取用时返回同一个数组", () => {
     const adapter = createLunarAdapter();
     const input = inputOf(2029, 5);
-    const first = adapter.decorateMonth(input);
+    const first = adapter.contentMonth(input);
 
-    expect(adapter.decorateMonth(input)).toBe(first);
+    expect(adapter.contentMonth(input)).toBe(first);
   });
 
   it("weekStartsOn 不同的同一个月分开缓存", () => {
     const adapter = createLunarAdapter();
-    const monday = adapter.decorateMonth({ ...inputOf(2029, 6), weekStartsOn: 1 });
-    const sunday = adapter.decorateMonth({ ...inputOf(2029, 6), weekStartsOn: 0 });
+    const monday = adapter.contentMonth({ ...inputOf(2029, 6), weekStartsOn: 1 });
+    const sunday = adapter.contentMonth({ ...inputOf(2029, 6), weekStartsOn: 0 });
 
     expect(monday).not.toBe(sunday);
   });
@@ -75,17 +75,17 @@ describe("适配器缓存", () => {
   it("超过缓存上限后淘汰最早的月份，仍能正常计算", () => {
     const adapter = createLunarAdapter();
     const firstInput = inputOf(2032, 1);
-    const first = adapter.decorateMonth(firstInput);
+    const first = adapter.contentMonth(firstInput);
 
     // 36 个不同的月份，确保超过 24 的缓存上限
     for (let index = 0; index < 36; index++) {
       const year = 2033 + Math.floor(index / 12);
       const month = (index % 12) + 1;
-      const decorations = adapter.decorateMonth(inputOf(year, month));
+      const decorations = adapter.contentMonth(inputOf(year, month));
       expect(decorations[0]).not.toBeNull();
     }
 
-    const again = adapter.decorateMonth(firstInput);
+    const again = adapter.contentMonth(firstInput);
     expect(again).not.toBe(first);
     expect(again[0]?.data?.cDay).toBe(1);
   });
@@ -112,19 +112,19 @@ describe("适配器缓存", () => {
     const replace = createLunarAdapter({ holidays, replaceHolidays: true });
 
     expect(merge.id).not.toBe(replace.id);
-    expect(merge.decorateMonth(inputOf(2030, 11, [dateOf(2030, 11, 15)]))[0]?.data?.gljr).toContain(
+    expect(merge.contentMonth(inputOf(2030, 11, [dateOf(2030, 11, 15)]))[0]?.data?.gljr).toContain(
       "仅此",
     );
-    expect(replace.decorateMonth(inputOf(2030, 11, [dateOf(2030, 11, 15)]))[0]?.data?.gljr).toEqual(
-      ["仅此"],
-    );
+    expect(replace.contentMonth(inputOf(2030, 11, [dateOf(2030, 11, 15)]))[0]?.data?.gljr).toEqual([
+      "仅此",
+    ]);
   });
 });
 
 describe("节假日替换", () => {
   it("默认合并内置数据", () => {
     const adapter = createLunarAdapter();
-    const [decoration] = adapter.decorateMonth(inputOf(2026, 10, [dateOf(2026, 10, 1)]));
+    const [decoration] = adapter.contentMonth(inputOf(2026, 10, [dateOf(2026, 10, 1)]));
 
     expect(decoration?.data?.gljr).toContain("国庆节");
     expect(decoration?.badge).toEqual({ text: "休", tone: "rest" });
@@ -135,7 +135,7 @@ describe("节假日替换", () => {
       holidays: { setFestival: { sFtv: { "1115": ["公司日"] } } },
       replaceHolidays: true,
     });
-    const [decoration] = adapter.decorateMonth(inputOf(2031, 10, [dateOf(2031, 10, 1)]));
+    const [decoration] = adapter.contentMonth(inputOf(2031, 10, [dateOf(2031, 10, 1)]));
 
     expect(decoration?.data?.gljr).toEqual([]);
     expect(decoration?.badge).toBeUndefined();
@@ -159,7 +159,7 @@ describe("createCalendarLunar 入口", () => {
   it("自定义 adapter 优先于内置农历适配器", () => {
     const adapter: CalendarAdapter<LunarResult> = {
       id: "custom",
-      decorateMonth: ({ days }) => days.map(() => ({ subtitle: "自定义" })),
+      contentMonth: ({ days }) => days.map(() => ({ subtitle: "自定义" })),
     };
     const instance = mount({ adapter, holidays: { setRest: { 2026: { xiu: ["1001"] } } } });
 

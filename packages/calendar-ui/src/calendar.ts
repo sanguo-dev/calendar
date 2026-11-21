@@ -19,7 +19,13 @@ import { resolveOptions } from "./core/options";
 import { createPickerLayer } from "./core/picker-layer";
 import { createDayBuilder, createRenderer, updateNav } from "./core/render";
 import { createState } from "./core/state";
-import type { ActionContext, CalendarDay, CalendarInstance, CalendarOptions } from "./types";
+import type {
+  ActionContext,
+  CalendarDay,
+  CalendarInstance,
+  CalendarOptions,
+  DayPopupHandle,
+} from "./types";
 
 /** 在容器中创建并返回一个日历实例。 */
 export function createCalendarUI<TData = null>(
@@ -99,9 +105,29 @@ export function createCalendarUI<TData = null>(
     monthCount,
   });
 
-  const popup = config.popup
-    ? createDayPopup({ root, popup: config.popup, locale: config.locale })
-    : null;
+  // popup 只负责「怎么打开」；「这一天有什么」由 buildDays 产出的内容决定。
+  // 懒创建：内容里第一次出现 popup 时才建，不用 popup 的实例一分钱不付。
+  let popup: DayPopupHandle | null = null;
+  const ensurePopup = (): DayPopupHandle =>
+    (popup ??= createDayPopup({
+      root,
+      popup: config.popup,
+      locale: config.locale,
+      getContent: (cell) => {
+        for (const panel of panels) {
+          if (panel.grid.el.contains(cell)) return panel.grid.popupOf(cell);
+        }
+        return null;
+      },
+    }));
+
+  /** 每轮渲染后同步：有内容才建；已经建过的每轮都要 sync，打开中的弹层才能随换月关闭 */
+  const syncPopup = (days: readonly (readonly CalendarDay<TData>[])[]): void => {
+    if (popup === null && days.some((list) => list.some((day) => day.popup !== null))) {
+      ensurePopup();
+    }
+    popup?.sync();
+  };
 
   const render = createRenderer({
     root,
@@ -112,7 +138,7 @@ export function createCalendarUI<TData = null>(
     panels,
     panelEls,
     collapse,
-    popup,
+    syncPopup,
     currentDays,
   });
 
@@ -161,7 +187,7 @@ export function createCalendarUI<TData = null>(
     header,
     picker,
     pickerLayer,
-    popup,
+    getPopup: () => popup,
     goTo: goToMonth,
   });
 }

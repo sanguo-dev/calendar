@@ -30,7 +30,7 @@ const tagOf = function (root: HTMLElement, key: string): string {
 const createFakeAdapter = function (): CalendarAdapter<{ note: string }> {
   return {
     id: "fake",
-    decorateMonth(input: MonthInput) {
+    contentMonth(input: MonthInput) {
       return input.days.map((date) => {
         if (date.year === 2026 && date.month === 10 && date.day === 1) {
           return {
@@ -72,11 +72,11 @@ describe("createCalendarUI 纯公历", () => {
     instance.destroy();
   });
 
-  it("adapter 的 42 个装饰按索引渲染", () => {
+  it("adapter 的 42 个内容按索引渲染", () => {
     let input: MonthInput | null = null;
     const adapter: CalendarAdapter<null> = {
       id: "spy",
-      decorateMonth(next) {
+      contentMonth(next) {
         input = next;
         return next.days.map(() => null);
       },
@@ -145,7 +145,7 @@ describe("自定义 subtitle", () => {
   it("用户 subtitle 优先于 adapter，null/undefined 回退，空字符串保留", () => {
     const adapter: CalendarAdapter<null> = {
       id: "subtitle",
-      decorateMonth({ days }) {
+      contentMonth({ days }) {
         return days.map((date) =>
           date.month === 10 && (date.day === 1 || date.day === 2 || date.day === 3)
             ? { subtitle: `adapter-${date.day}` }

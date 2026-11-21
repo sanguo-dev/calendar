@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it } from "vite-plus/test";
 import type { CalendarDate, CalendarInstance, DayPopupItem } from "../src/index.ts";
 import { createCalendarUI } from "../src/index.ts";
-import { cellOf, popupOf } from "./helpers.ts";
+import { cellOf, popupOf, toDecorate } from "./helpers.ts";
 
 const hosts: HTMLElement[] = [];
 const instances: CalendarInstance[] = [];
@@ -33,6 +33,8 @@ const create = function (options: Parameters<typeof createCalendarUI>[1] = {}): 
 const renderDay = (day: CalendarDate): readonly DayPopupItem[] =>
   day.month === 10 && day.day === 1 ? [["全天", "内容"]] : [];
 
+const contentDay = toDecorate(renderDay);
+
 describe("实例打开 / 关闭", () => {
   it("open / close / toggle / isOpen 同步 root.hidden", () => {
     const { instance } = create();
@@ -54,7 +56,7 @@ describe("实例打开 / 关闭", () => {
   });
 
   it("close / toggle 关闭时会关闭已打开的 popup", () => {
-    const { instance } = create({ initialDate: "2026-10-01", popup: { render: renderDay } });
+    const { instance } = create({ initialDate: "2026-10-01", popup: {}, contentDay: contentDay });
     const cell = cellOf(instance.el, "2026-10-1");
 
     cell.click();
@@ -156,7 +158,7 @@ describe("实例关闭与焦点", () => {
   });
 
   it("焦点在日期格 popup 里时也会还给触发元素", () => {
-    const { instance } = create({ initialDate: "2026-10-01", popup: { render: renderDay } });
+    const { instance } = create({ initialDate: "2026-10-01", popup: {}, contentDay: contentDay });
     const input = inputOf();
 
     instance.close();
@@ -348,7 +350,8 @@ describe("实例主题", () => {
     const { instance } = create({
       initialDate: "2026-10-01",
       theme: "light",
-      popup: { render: renderDay },
+      popup: {},
+      contentDay: contentDay,
     });
     const popup = createPopupFor(instance);
 
@@ -370,7 +373,8 @@ describe("实例销毁", () => {
   it("destroy 移除根节点、popup 和开着的弹层", () => {
     const { instance, host: container } = create({
       initialDate: "2026-10-01",
-      popup: { render: renderDay },
+      popup: {},
+      contentDay: contentDay,
     });
     cellOf(instance.el, "2026-10-1").click();
 

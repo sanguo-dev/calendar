@@ -1,12 +1,11 @@
 import type {
   CalendarAdapter,
-  CalendarDate,
   CalendarDay,
   CalendarMode,
   CalendarRange,
   CalendarSize,
   CalendarTheme,
-  DayPopupItem,
+  DayContentRenderer,
   DayPopupPlacement,
   DayPopupTrigger,
   HeaderRenderer,
@@ -34,7 +33,6 @@ export interface ResolvedAnimation {
 /** 校验并补全默认值之后的 popup 配置 */
 export interface ResolvedCalendarPopupOptions {
   trigger: DayPopupTrigger;
-  render: (day: CalendarDate) => readonly DayPopupItem[];
   placement: DayPopupPlacement;
   role: "dialog" | "tooltip";
   ariaLabel?: string;
@@ -45,7 +43,7 @@ export interface DayPopupHandle {
   /** 关闭当前 popup；restoreFocus 为 false 时不动焦点 */
   close(restoreFocus?: boolean): void;
   destroy(): void;
-  /** 每次重绘后调用：关闭失效的 popup、刷新绿点 */
+  /** 每次重绘后调用：关闭失效的 popup */
   sync(): void;
   isOpen(): boolean;
   /** 主题变化后同步 popup 上复制的 CSS 变量 */
@@ -57,6 +55,8 @@ export interface CalendarConfig<TData = null> {
   weekStartsOn: WeekStartsOn;
   locale: CalendarLocale;
   adapter?: CalendarAdapter<TData>;
+  /** 单天内容，优先于 adapter */
+  contentDay?: DayContentRenderer<TData>;
   /** 初始主题；运行时切换只改字段和 dataset */
   theme: CalendarTheme;
   size: CalendarSize;
@@ -68,8 +68,8 @@ export interface CalendarConfig<TData = null> {
   /** 是否渲染头部；为 false 时内部不创建头部 */
   showHeader: boolean;
   renderHeader?: HeaderRenderer;
-  /** 日期格 popup */
-  popup?: ResolvedCalendarPopupOptions;
+  /** 日期格 popup 的交互配置；没写时用默认值（click + dialog） */
+  popup: ResolvedCalendarPopupOptions;
   onSelect?: (day: CalendarDay<TData>) => void;
   onMonthChange?: (year: number, month: number) => void;
   onRangeChange?: (range: CalendarRange) => void;
@@ -196,8 +196,12 @@ export interface RendererDeps<TData = null> {
   collapse: CollapseHandle<TData>;
   /** 头部；header: false 时为 null */
   header: HeaderHandle | null;
-  /** 日期格 popup；未启用时为 null */
-  popup: DayPopupHandle | null;
+  /**
+   * 每轮渲染后同步 popup
+   *
+   * 内容里第一次出现 popup 时才真正创建弹层；没出现过就一直不创建。
+   */
+  syncPopup(days: readonly CalendarDay<TData>[][]): void;
   currentDays(offset?: number): CalendarDay<TData>[];
 }
 
@@ -222,6 +226,7 @@ export interface CalendarRuntime<TData = null> extends ActionContext<TData> {
   /** 年月选择层；header: false 时为 null */
   picker: PickerHandle | null;
   pickerLayer: PickerLayerHandle | null;
-  popup: DayPopupHandle | null;
+  /** 日期格 popup 控制器；内容里没出现过 popup 时是 null */
+  getPopup(): DayPopupHandle | null;
   goTo(year: number, month: number): void;
 }

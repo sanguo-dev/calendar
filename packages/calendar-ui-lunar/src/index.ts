@@ -7,7 +7,7 @@ import type {
   CalendarDay,
   CalendarInstance,
   CalendarOptions,
-  DayDecoration,
+  DayContent,
   MonthInput,
 } from "@sanguo-dev/calendar-ui";
 
@@ -29,10 +29,10 @@ export interface LunarCalendarOptions extends CalendarOptions<LunarResult> {
 export type LunarCalendarDay = CalendarDay<LunarResult>;
 
 /** 不含选中/今天的那部分缓存，可以跨实例复用 */
-type MonthDecorations = ReadonlyArray<DayDecoration<LunarResult> | null>;
+type MonthContents = ReadonlyArray<DayContent<LunarResult> | null>;
 
 const CACHE_LIMIT = 24;
-const monthCache = new Map<string, MonthDecorations>();
+const monthCache = new Map<string, MonthContents>();
 
 interface Source {
   id: number;
@@ -86,10 +86,10 @@ const subtitleOf = function (lunar: LunarResult): string {
   return lunar.lDayCn;
 };
 
-const decorateDate = function (
+const contentOfDate = function (
   source: Source,
   date: CalendarDate,
-): DayDecoration<LunarResult> | null {
+): DayContent<LunarResult> | null {
   let lunar: LunarResult;
   try {
     lunar = source.solarToLunar(date.year, date.month, date.day);
@@ -116,7 +116,7 @@ export const createLunarAdapter = function (
 
   return {
     id: `lunar-${source.id}`,
-    decorateMonth(input: MonthInput): MonthDecorations {
+    contentMonth(input: MonthInput): MonthContents {
       const key = `${source.id}-${input.year}-${input.month}-${input.weekStartsOn}`;
       const cached = monthCache.get(key);
       if (cached) {
@@ -125,13 +125,13 @@ export const createLunarAdapter = function (
         return cached;
       }
 
-      const decorations = input.days.map((date) => decorateDate(source, date));
+      const contents = input.days.map((date) => contentOfDate(source, date));
       if (monthCache.size >= CACHE_LIMIT) {
         const oldest = monthCache.keys().next();
         if (!oldest.done) monthCache.delete(oldest.value);
       }
-      monthCache.set(key, decorations);
-      return decorations;
+      monthCache.set(key, contents);
+      return contents;
     },
   };
 };
@@ -167,7 +167,7 @@ export type {
   CalendarRange,
   CalendarSize,
   CalendarTheme,
-  DayDecoration,
+  DayContent,
   MonthInput,
   WeekStartsOn,
   YearMonth,

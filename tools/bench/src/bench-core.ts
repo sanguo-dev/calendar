@@ -378,17 +378,19 @@ interface BenchDate {
   day: number;
 }
 
-interface BenchDecoration {
+interface BenchContent {
   subtitle: string;
   badge: { text: string; tone: string } | null;
   data: { serial: number };
+  popup?: { items: readonly (readonly [string, string, string])[] };
 }
 
 const benchAdapter = {
   id: "bench-adapter",
-  decorateMonth(input: { days: readonly BenchDate[] }): ReadonlyArray<BenchDecoration> {
+  contentMonth(input: { days: readonly BenchDate[] }): ReadonlyArray<BenchContent> {
     return input.days.map((date, index) => {
       const serial = date.year * 372 + date.month * 31 + date.day;
+      const items = POPUP_DATA.get(date.day);
       return {
         subtitle: SUBTITLES[serial % SUBTITLES.length] ?? "初一",
         badge:
@@ -396,6 +398,7 @@ const benchAdapter = {
             ? { text: index % 12 === 0 ? "休" : "班", tone: index % 12 === 0 ? "rest" : "work" }
             : null,
         data: { serial },
+        ...(items ? { popup: { items } } : {}),
       };
     });
   },
@@ -421,10 +424,7 @@ function mountCalendar(variant: VariantId, host: HTMLElement): Handle {
     options.header = false;
   } else if (variant === "adapter") {
     options.adapter = benchAdapter;
-    options.popup = {
-      trigger: "hover",
-      render: (day: { day: number }) => POPUP_DATA.get(day.day) ?? [],
-    };
+    options.popup = { trigger: "hover" };
   } else if (variant === "range-2") {
     options.mode = "range";
     options.months = 2;

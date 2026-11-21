@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
-import type { CalendarPopupOptions, DayPopupItem } from "../src/index.ts";
+import type { CalendarPopupOptions } from "../src/index.ts";
 import { resolveOptions } from "../src/core/options.ts";
-
-const render = (): [] => [];
 
 const popupOf = function (popup: CalendarPopupOptions): CalendarPopupOptions {
   return popup;
@@ -32,7 +30,7 @@ describe("resolveOptions 默认值", () => {
       collapseEasing: "ease",
       defaultCollapsed: false,
     });
-    expect(config.popup).toBeUndefined();
+    expect(config.popup).toMatchObject({ trigger: "click", role: "dialog" });
   });
 
   it("初始日期落在禁选日期时选择最近的可选日期", () => {
@@ -49,12 +47,10 @@ describe("resolveOptions 校验 popup", () => {
   const invalid: Array<[string, unknown]> = [
     ["popup 为 null", null],
     ["popup 为字符串", "popup"],
-    ["缺少 render", {}],
-    ["render 不是函数", { render: "x" }],
-    ["trigger 不认识", { render, trigger: "dblclick" }],
-    ["placement 不认识", { render, placement: "left" }],
-    ["role 不认识", { render, role: "menu" }],
-    ["ariaLabel 不是字符串", { render, ariaLabel: 1 }],
+    ["trigger 不认识", { trigger: "dblclick" }],
+    ["placement 不认识", { placement: "left" }],
+    ["role 不认识", { role: "menu" }],
+    ["ariaLabel 不是字符串", { ariaLabel: 1 }],
   ];
 
   it.each(invalid)("%s 抛 TypeError", (_name, popup) => {
@@ -63,16 +59,16 @@ describe("resolveOptions 校验 popup", () => {
     );
   });
 
-  it("补全 trigger / placement / role 的默认值", () => {
-    const click = resolveOptions({ popup: { render } }).config.popup;
+  it("空对象也能补全默认值", () => {
+    const click = resolveOptions({ popup: {} }).config.popup;
     expect(click).toMatchObject({ trigger: "click", placement: "auto", role: "dialog" });
     expect(click?.ariaLabel).toBeUndefined();
 
-    const hover = resolveOptions({ popup: { render, trigger: "hover" } }).config.popup;
+    const hover = resolveOptions({ popup: { trigger: "hover" } }).config.popup;
     expect(hover).toMatchObject({ trigger: "hover", role: "tooltip" });
 
     const explicit = resolveOptions({
-      popup: { render, trigger: "focus", role: "dialog", placement: "center", ariaLabel: "日程" },
+      popup: { trigger: "focus", role: "dialog", placement: "center", ariaLabel: "日程" },
     }).config.popup;
     expect(explicit).toMatchObject({
       trigger: "focus",
@@ -82,21 +78,9 @@ describe("resolveOptions 校验 popup", () => {
     });
   });
 
-  it("resolved.popup.render 代理原始 render", () => {
-    const calls: number[] = [];
-    const resolved = resolveOptions({
-      popup: {
-        render: (day): readonly DayPopupItem[] => {
-          calls.push(day.day);
-          return [[String(day.day)]];
-        },
-      },
-    }).config.popup;
-
-    expect(
-      resolved?.render({ year: 2026, month: 10, day: 8, date: new Date(), inCurrentMonth: true }),
-    ).toEqual([["8"]]);
-    expect(calls).toEqual([8]);
+  it("contentDay 必须是函数", () => {
+    expect(() => resolveOptions({ contentDay: "x" as never })).toThrow(TypeError);
+    expect(typeof resolveOptions({ contentDay: () => null }).config.contentDay).toBe("function");
   });
 });
 

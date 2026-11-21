@@ -27,7 +27,10 @@ export const createPanels = function <TData = null>(
 ): CalendarPanel<TData>[] {
   return Array.from({ length: monthCount }, () => {
     const viewport = node("div", "cui__viewport");
-    const grid = createGrid<TData>({ onSelect });
+    const grid = createGrid<TData>({
+      onSelect,
+      popupDialog: config.popup.role === "dialog",
+    });
     viewport.append(grid.el);
     return {
       weekdays: createWeekdays(config.weekStartsOn, config.locale),

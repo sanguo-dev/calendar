@@ -1,4 +1,4 @@
-import type { CalendarDay, HeaderRenderer } from "./calendar";
+import type { CalendarDay, DayPopupContent, HeaderRenderer } from "./calendar";
 import type { CalendarLocale } from "./locale";
 
 /** 头部左右切换按钮的入参 */
@@ -106,6 +106,8 @@ export interface PickerHandle {
 export interface GridOptions<TData = null> {
   /** 点中某一格时触发，index 是该格在 42 格里的下标 */
   onSelect: (day: CalendarDay<TData>, index: number) => void;
+  /** popup 的 role 是不是 dialog；是的话有内容的格子要写 aria-haspopup */
+  popupDialog?: boolean;
 }
 
 /** 日期网格的句柄 */
@@ -125,6 +127,12 @@ export interface GridHandle<TData = null> {
    * 点击路径本来就知道下标，不用再从日期 key 反查。
    */
   selectAt(index: number): CalendarDay<TData> | undefined;
+  /**
+   * 取某个格子这一轮渲染出的 popup 内容
+   *
+   * popup 控制器打开弹层时用它拿内容，不用再问一次内容回调。
+   */
+  popupOf(cell: HTMLElement): DayPopupContent | null;
   /**
    * 折叠时只显示指定行；传 null 显示全部 6 行
    *

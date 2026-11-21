@@ -19,13 +19,13 @@ const POPUP_ROLES = ["dialog", "tooltip"] as const;
 
 const resolvePopup = function (
   popup: CalendarPopupOptions | undefined,
-): ResolvedCalendarPopupOptions | undefined {
-  if (popup === undefined) return undefined;
+): ResolvedCalendarPopupOptions {
+  if (popup === undefined) {
+    // 不写 popup 也要有默认值：内容里给了内容就按默认交互生效
+    return { trigger: "click", placement: "auto", role: "dialog" };
+  }
   if (popup === null || typeof popup !== "object") {
     throw new TypeError("[calendar-ui] popup 必须是对象");
-  }
-  if (typeof popup.render !== "function") {
-    throw new TypeError("[calendar-ui] popup.render 必须是函数");
   }
 
   const trigger = popup.trigger ?? "click";
@@ -49,7 +49,6 @@ const resolvePopup = function (
 
   return {
     trigger,
-    render: (day) => popup.render(day),
     placement,
     role,
     ariaLabel: popup.ariaLabel,
@@ -128,10 +127,15 @@ export const resolveOptions = function <TData = null>(
   );
   const popup = resolvePopup(options.popup);
 
+  if (options.contentDay !== undefined && typeof options.contentDay !== "function") {
+    throw new TypeError("[calendar-ui] contentDay 必须是函数");
+  }
+
   const config: CalendarConfig<TData> = {
     weekStartsOn: options.weekStartsOn ?? 1,
     locale,
     adapter: options.adapter,
+    contentDay: options.contentDay,
     theme: options.theme ?? "auto",
     size,
     today,

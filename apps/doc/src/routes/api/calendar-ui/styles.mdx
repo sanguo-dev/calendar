@@ -134,7 +134,7 @@ import "@sanguo-dev/calendar-ui/style.css";
 
 右上角绿点不是 DOM 节点：有 popup 的格子带 `is-dot` 类，由 `.cui__day.is-dot::after` 画出来，颜色取 `--cui-popup-dot`。没有 `is-dot` 的格子不生成这个伪元素。
 
-`.cui__popup` 默认提供定位、`max-width` / `max-height`、滚动和一层轻量卡片（背景、边框、圆角、阴影、内边距）；`.cui__popup-head` 是「日期 · 条数」头部，`.cui__popup-body` 是内容容器，`.cui__popup-item` 包裹 `popup.render` 返回的每一项。`[time, title, detail]` 项会生成 `.cui__popup-title`（含 `.cui__popup-time` / `.cui__popup-name`）和 `.cui__popup-detail`；字符串内容只放 `.cui__popup-title`；返回 Node 时内部结构由使用方自己决定。想换外观直接用 CSS 覆盖这些类。popup 离开 `.cui` 后会把主题变量复制到根节点，并带 `data-theme` 和 `data-placement`。
+`.cui__popup` 默认提供定位、`max-width` / `max-height`、滚动和一层轻量卡片（背景、边框、圆角、阴影、内边距）；`.cui__popup-head` 是「日期 · 条数」头部，`.cui__popup-body` 是内容容器，`.cui__popup-item` 包裹内容里 `popup.items` 的每一项。`[time, title, detail]` 项会生成 `.cui__popup-title`（含 `.cui__popup-time` / `.cui__popup-name`）和 `.cui__popup-detail`；字符串内容只放 `.cui__popup-title`；返回 Node 时内部结构由使用方自己决定。想换外观直接用 CSS 覆盖这些类。popup 离开 `.cui` 后会把主题变量复制到根节点，并带 `data-theme` 和 `data-placement`。
 
 ## 动画偏好
 

@@ -5,12 +5,13 @@ import type {
   CalendarInstance,
   CalendarOptions,
   CalendarPopupOptions,
+  DayContentRenderer,
   DayPopupItem,
 } from "../src/index.ts";
 import { createCalendarUI } from "../src/index.ts";
 import { zhCN } from "../src/index.ts";
 import { createDayPopup } from "../src/core/day-popup.ts";
-import { cellOf, itemsOf, popupOf } from "./helpers.ts";
+import { cellOf, itemsOf, popupOf, toDecorate } from "./helpers.ts";
 
 const cleanups: Array<() => void> = [];
 
@@ -23,15 +24,16 @@ afterEach(() => {
 });
 
 const create = function (
-  popup: CalendarPopupOptions,
-  options: Omit<CalendarOptions, "popup"> = {},
+  contentDay: DayContentRenderer<null>,
+  options: Omit<CalendarOptions, "popup" | "contentDay"> & { popup?: CalendarPopupOptions } = {},
 ): CalendarInstance {
   const container = document.createElement("div");
   document.body.append(container);
   const instance = createCalendarUI(container, {
     initialDate: options.initialDate ?? "2026-10-01",
     ...options,
-    popup,
+    popup: options.popup ?? {},
+    contentDay,
   });
   cleanups.push(() => {
     instance.destroy();
@@ -68,6 +70,9 @@ const sharedRender = function (day: CalendarDate): readonly DayPopupItem[] {
     ? [["全天", `${day.day} 号`, "内容"]]
     : [];
 };
+
+/** 同一份数据的单天内容形态：返回对象表示有 popup，返回 null 表示没有 */
+const sharedDecorate = toDecorate(sharedRender);
 
 /** 伪造 hover 能力 */
 const stubHover = function (matches: boolean): void {
@@ -119,7 +124,7 @@ const stubRects = function (cell: Partial<DOMRect>, popup: Partial<DOMRect>): vo
 
 describe("click 触发", () => {
   it("点击有内容的格子打开，再次点击关闭", () => {
-    const instance = create({ render: sharedRender });
+    const instance = create(sharedDecorate);
     const cell = cellOf(instance.el, "2026-10-1");
 
     cell.click();
@@ -131,7 +136,7 @@ describe("click 触发", () => {
   });
 
   it("点击另一个有内容的格子会切换内容", () => {
-    const instance = create({ render: sharedRender });
+    const instance = create(sharedDecorate);
     const first = cellOf(instance.el, "2026-10-1");
     const second = cellOf(instance.el, "2026-10-5");
 
@@ -147,7 +152,7 @@ describe("click 触发", () => {
   });
 
   it("点击格子内部的数字 / 副标题也能打开", () => {
-    const instance = create({ render: sharedRender });
+    const instance = create(sharedDecorate);
     const cell = cellOf(instance.el, "2026-10-1");
     const num = cell.querySelector(".cui__day-num")!;
 
@@ -156,7 +161,7 @@ describe("click 触发", () => {
   });
 
   it("点击非日期格、没有日期的格子和非法日期都不打开", () => {
-    const instance = create({ render: sharedRender });
+    const instance = create(sharedDecorate);
     instance.el.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     expect(isOpen()).toBe(false);
 
@@ -182,10 +187,10 @@ describe("click 触发", () => {
   });
 
   it("禁用日期点击不打开", () => {
-    const instance = create(
-      { render: sharedRender },
-      { initialDate: "2026-10-01", disabledDates: ["2026-10-01"] },
-    );
+    const instance = create(sharedDecorate, {
+      initialDate: "2026-10-01",
+      disabledDates: ["2026-10-01"],
+    });
 
     const cell = cellOf(instance.el, "2026-10-1");
     expect(cell.disabled).toBe(true);
@@ -197,7 +202,7 @@ describe("click 触发", () => {
 describe("hover 触发", () => {
   it("pointerover 打开 tooltip，pointerout 延迟关闭", () => {
     vi.useFakeTimers();
-    const instance = create({ trigger: "hover", render: sharedRender });
+    const instance = create(sharedDecorate, { popup: { trigger: "hover" } });
     const cell = cellOf(instance.el, "2026-10-1");
 
     pointer(cell, "pointerover");
@@ -212,7 +217,7 @@ describe("hover 触发", () => {
 
   it("鼠标移入 popup 会取消关闭，移出后重新计时", () => {
     vi.useFakeTimers();
-    const instance = create({ trigger: "hover", render: sharedRender });
+    const instance = create(sharedDecorate, { popup: { trigger: "hover" } });
     const cell = cellOf(instance.el, "2026-10-1");
     const popup = popupOf();
 
@@ -229,7 +234,7 @@ describe("hover 触发", () => {
 
   it("pointerout 的 relatedTarget 在格子或 popup 内时不关闭", () => {
     vi.useFakeTimers();
-    const instance = create({ trigger: "hover", render: sharedRender });
+    const instance = create(sharedDecorate, { popup: { trigger: "hover" } });
     const cell = cellOf(instance.el, "2026-10-1");
     const popup = popupOf();
     const num = cell.querySelector(".cui__day-num")!;
@@ -250,7 +255,7 @@ describe("hover 触发", () => {
 
   it("移到另一个有内容的格子会切换 popup，移到无内容格子保持原样", () => {
     vi.useFakeTimers();
-    const instance = create({ trigger: "hover", render: sharedRender });
+    const instance = create(sharedDecorate, { popup: { trigger: "hover" } });
     const first = cellOf(instance.el, "2026-10-1");
 
     pointer(first, "pointerover");
@@ -268,7 +273,7 @@ describe("hover 触发", () => {
   });
 
   it("hover 模式下点击只在键盘点击（detail 0）时切换", () => {
-    const instance = create({ trigger: "hover", render: sharedRender });
+    const instance = create(sharedDecorate, { popup: { trigger: "hover" } });
     const cell = cellOf(instance.el, "2026-10-1");
 
     cell.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
@@ -281,10 +286,10 @@ describe("hover 触发", () => {
   });
 
   it("禁用日期的 hover 不打开", () => {
-    const instance = create(
-      { trigger: "hover", render: sharedRender },
-      { disabledDates: ["2026-10-01"] },
-    );
+    const instance = create(sharedDecorate, {
+      popup: { trigger: "hover" },
+      disabledDates: ["2026-10-01"],
+    });
 
     pointer(cellOf(instance.el, "2026-10-1"), "pointerover");
     expect(isOpen()).toBe(false);
@@ -293,7 +298,7 @@ describe("hover 触发", () => {
 
 describe("focus 触发", () => {
   it("focusin 打开，focusout 关闭", () => {
-    const instance = create({ trigger: "focus", render: sharedRender });
+    const instance = create(sharedDecorate, { popup: { trigger: "focus" } });
     const cell = cellOf(instance.el, "2026-10-1");
 
     focusIn(cell);
@@ -305,7 +310,7 @@ describe("focus 触发", () => {
   });
 
   it("焦点在格子与 popup 之间移动时不关闭", () => {
-    const instance = create({ trigger: "focus", role: "dialog", render: sharedRender });
+    const instance = create(sharedDecorate, { popup: { trigger: "focus", role: "dialog" } });
     const cell = cellOf(instance.el, "2026-10-1");
     const popup = popupOf();
 
@@ -323,7 +328,7 @@ describe("focus 触发", () => {
   });
 
   it("Escape 关闭后焦点回到日期格，且不会因恢复焦点重新打开", async () => {
-    const instance = create({ trigger: "focus", role: "dialog", render: sharedRender });
+    const instance = create(sharedDecorate, { popup: { trigger: "focus", role: "dialog" } });
     const cell = cellOf(instance.el, "2026-10-1");
 
     focusIn(cell);
@@ -338,7 +343,7 @@ describe("focus 触发", () => {
   });
 
   it("同一格重复 focusin 不会重复打开，换格则切换", () => {
-    const instance = create({ trigger: "focus", render: sharedRender });
+    const instance = create(sharedDecorate, { popup: { trigger: "focus" } });
     const first = cellOf(instance.el, "2026-10-1");
     const second = cellOf(instance.el, "2026-10-5");
 
@@ -351,7 +356,7 @@ describe("focus 触发", () => {
   });
 
   it("点击已打开的格子不会切换", () => {
-    const instance = create({ trigger: "focus", render: sharedRender });
+    const instance = create(sharedDecorate, { popup: { trigger: "focus" } });
     const cell = cellOf(instance.el, "2026-10-1");
 
     focusIn(cell);
@@ -365,7 +370,7 @@ describe("focus 触发", () => {
 describe("auto 触发", () => {
   it("支持 hover 的设备用 hover 打开，鼠标点击不切换", () => {
     stubHover(true);
-    const instance = create({ trigger: "auto", render: sharedRender });
+    const instance = create(sharedDecorate, { popup: { trigger: "auto" } });
     const cell = cellOf(instance.el, "2026-10-1");
 
     pointer(cell, "pointerover");
@@ -384,7 +389,7 @@ describe("auto 触发", () => {
 
   it("不支持 hover 的设备退化为 click", () => {
     stubHover(false);
-    const instance = create({ trigger: "auto", render: sharedRender });
+    const instance = create(sharedDecorate, { popup: { trigger: "auto" } });
     const cell = cellOf(instance.el, "2026-10-1");
 
     pointer(cell, "pointerover");
@@ -403,7 +408,7 @@ describe("popup 定位", () => {
       { top: 100, bottom: 130, left: 100, width: 30, height: 30 },
       { height: 50, width: 100 },
     );
-    const instance = create({ render: sharedRender, placement: "bottom" });
+    const instance = create(sharedDecorate, { popup: { placement: "bottom" } });
 
     cellOf(instance.el, "2026-10-1").click();
 
@@ -418,7 +423,7 @@ describe("popup 定位", () => {
       { top: 600, bottom: 630, left: 100, width: 30, height: 30 },
       { height: 50, width: 100 },
     );
-    const instance = create({ render: sharedRender, placement: "top" });
+    const instance = create(sharedDecorate, { popup: { placement: "top" } });
 
     cellOf(instance.el, "2026-10-1").click();
 
@@ -431,7 +436,7 @@ describe("popup 定位", () => {
       { top: 720, bottom: 750, left: 100, width: 30, height: 30 },
       { height: 50, width: 100 },
     );
-    const instance = create({ render: sharedRender, placement: "auto" });
+    const instance = create(sharedDecorate, { popup: { placement: "auto" } });
 
     cellOf(instance.el, "2026-10-1").click();
 
@@ -441,7 +446,7 @@ describe("popup 定位", () => {
 
   it("auto：下方空间充足时放在下方，左侧超出视口时夹到 8px", () => {
     stubRects({ top: 10, bottom: 40, left: 0, width: 10, height: 30 }, { height: 40, width: 100 });
-    const instance = create({ render: sharedRender, placement: "auto" });
+    const instance = create(sharedDecorate, { popup: { placement: "auto" } });
 
     cellOf(instance.el, "2026-10-1").click();
 
@@ -455,7 +460,7 @@ describe("popup 定位", () => {
       { top: 100, bottom: 130, left: 100, width: 30, height: 30 },
       { height: 50, width: 100 },
     );
-    const instance = create({ render: sharedRender, placement: "center" });
+    const instance = create(sharedDecorate, { popup: { placement: "center" } });
 
     cellOf(instance.el, "2026-10-1").click();
 
@@ -468,7 +473,7 @@ describe("popup 定位", () => {
 
 describe("popup 主题与无障碍", () => {
   it("继承根节点的主题和 CSS 变量", () => {
-    const instance = create({ render: sharedRender });
+    const instance = create(sharedDecorate);
     instance.el.dataset.theme = "light";
     instance.el.style.setProperty("--cui-bg", "#fff");
     instance.el.style.setProperty("--cui-accent", "#06f");
@@ -479,7 +484,7 @@ describe("popup 主题与无障碍", () => {
   });
 
   it("没有 data-theme 时主题为 auto", () => {
-    const instance = create({ render: sharedRender });
+    const instance = create(sharedDecorate);
     delete instance.el.dataset.theme;
 
     cellOf(instance.el, "2026-10-1").click();
@@ -488,10 +493,8 @@ describe("popup 主题与无障碍", () => {
   });
 
   it("role / aria-label 写到 popup 上，dialog 可聚焦", () => {
-    const instance = create({
-      render: sharedRender,
-      role: "dialog",
-      ariaLabel: "日程详情",
+    const instance = create(sharedDecorate, {
+      popup: { role: "dialog", ariaLabel: "日程详情" },
     });
 
     cellOf(instance.el, "2026-10-1").click();
@@ -503,7 +506,7 @@ describe("popup 主题与无障碍", () => {
   });
 
   it("tooltip 使用 aria-describedby，不设置 aria-expanded", () => {
-    const instance = create({ trigger: "hover", render: sharedRender });
+    const instance = create(sharedDecorate, { popup: { trigger: "hover" } });
     const cell = cellOf(instance.el, "2026-10-1");
 
     pointer(cell, "pointerover");
@@ -515,7 +518,7 @@ describe("popup 主题与无障碍", () => {
   });
 
   it("dialog 角色给有内容的格子加 aria-haspopup，销毁时移除", () => {
-    const instance = create({ render: sharedRender });
+    const instance = create(sharedDecorate);
 
     expect(cellOf(instance.el, "2026-10-1").getAttribute("aria-haspopup")).toBe("dialog");
     expect(cellOf(instance.el, "2026-10-2").hasAttribute("aria-haspopup")).toBe(false);
@@ -529,26 +532,20 @@ describe("popup 主题与无障碍", () => {
   });
 
   it("自定义 popupTitle 优先于默认文案", () => {
-    const instance = create(
-      { render: sharedRender },
-      {
-        initialDate: "2026-10-01",
-        locale: { ...zhCN, popupTitle: (day, count) => `自定义 ${day.day}/${count}` },
-      },
-    );
+    const instance = create(sharedDecorate, {
+      initialDate: "2026-10-01",
+      locale: { ...zhCN, popupTitle: (day, count) => `自定义 ${day.day}/${count}` },
+    });
 
     cellOf(instance.el, "2026-10-1").click();
     expect(popupOf().querySelector(".cui__popup-head")?.textContent).toBe("自定义 1/1");
   });
 
   it("语言包没有 popupTitle 时使用默认的 月/日 · 条数", () => {
-    const instance = create(
-      { render: sharedRender },
-      {
-        initialDate: "2026-10-01",
-        locale: { ...zhCN, popupTitle: undefined },
-      },
-    );
+    const instance = create(sharedDecorate, {
+      initialDate: "2026-10-01",
+      locale: { ...zhCN, popupTitle: undefined },
+    });
 
     cellOf(instance.el, "2026-10-1").click();
     expect(popupOf().querySelector(".cui__popup-head")?.textContent).toBe("10/1 · 1");
@@ -557,7 +554,7 @@ describe("popup 主题与无障碍", () => {
 
 describe("popup 关闭路径", () => {
   it("pointerdown 在 popup 或当前格子上不关闭，在外部关闭", () => {
-    const instance = create({ render: sharedRender });
+    const instance = create(sharedDecorate);
     const cell = cellOf(instance.el, "2026-10-1");
 
     cell.click();
@@ -572,7 +569,7 @@ describe("popup 关闭路径", () => {
   });
 
   it("Escape 关闭，scroll / resize 关闭", () => {
-    const instance = create({ render: sharedRender });
+    const instance = create(sharedDecorate);
     const cell = cellOf(instance.el, "2026-10-1");
 
     cell.click();
@@ -589,10 +586,10 @@ describe("popup 关闭路径", () => {
   });
 
   it("折叠隐藏当前行后 popup 关闭", () => {
-    const instance = create(
-      { trigger: "hover", render: sharedRender },
-      { animation: { collapse: {} } },
-    );
+    const instance = create(sharedDecorate, {
+      popup: { trigger: "hover" },
+      animation: { collapse: {} },
+    });
 
     pointer(cellOf(instance.el, "2026-10-5"), "pointerover");
     expect(isOpen()).toBe(true);
@@ -602,7 +599,7 @@ describe("popup 关闭路径", () => {
   });
 
   it("根节点隐藏后重绘会关闭 popup", () => {
-    const instance = create({ render: sharedRender });
+    const instance = create(sharedDecorate);
     cellOf(instance.el, "2026-10-1").click();
 
     instance.el.hidden = true;
@@ -612,7 +609,7 @@ describe("popup 关闭路径", () => {
   });
 
   it("当前格子被禁用后重绘会关闭 popup", () => {
-    const instance = create({ render: sharedRender });
+    const instance = create(sharedDecorate);
     cellOf(instance.el, "2026-10-1").click();
     expect(isOpen()).toBe(true);
 
@@ -622,7 +619,7 @@ describe("popup 关闭路径", () => {
   });
 
   it("所在周被隐藏时关闭 popup", () => {
-    const instance = create({ render: sharedRender });
+    const instance = create(sharedDecorate);
     cellOf(instance.el, "2026-10-1").click();
     const week = cellOf(instance.el, "2026-10-1").closest<HTMLElement>(".cui__week")!;
 
@@ -633,7 +630,7 @@ describe("popup 关闭路径", () => {
   });
 
   it("格子日期变化（换月）后关闭 popup", () => {
-    const instance = create({ render: sharedRender });
+    const instance = create(sharedDecorate);
     cellOf(instance.el, "2026-10-1").click();
 
     instance.nextMonth();
@@ -646,7 +643,7 @@ describe("popup 关闭路径", () => {
       { top: 100, bottom: 130, left: 100, width: 30, height: 30 },
       { height: 50, width: 100 },
     );
-    const instance = create({ render: sharedRender });
+    const instance = create(sharedDecorate);
     cellOf(instance.el, "2026-10-1").click();
 
     instance.select("2026-10-20");
@@ -669,11 +666,11 @@ describe("popup 控制器句柄", () => {
       root,
       popup: {
         trigger: "click",
-        render: () => [["全天", "内容"]],
         placement: "auto",
         role: "dialog",
       },
       locale: zhCN,
+      getContent: () => ({ items: [["全天", "内容"]] }),
     });
     cleanups.push(() => {
       handle.destroy();
@@ -682,9 +679,9 @@ describe("popup 控制器句柄", () => {
 
     expect(handle.isOpen()).toBe(false);
 
-    // 绿点由 sync 写入 .is-dot，不再是一个真实节点
-    handle.sync();
-    expect(cell.classList.contains("is-dot")).toBe(true);
+    // 绿点归渲染管线（setDayState），popup 只负责打开 / 关闭 / 定位
+    expect(cell.classList.contains("is-dot")).toBe(false);
+    expect(() => handle.sync()).not.toThrow();
 
     cell.click();
     expect(handle.isOpen()).toBe(true);
@@ -718,7 +715,7 @@ describe("ResizeObserver 与销毁", () => {
     }
 
     vi.stubGlobal("ResizeObserver", FakeResizeObserver);
-    const instance = create({ render: sharedRender });
+    const instance = create(sharedDecorate);
     cellOf(instance.el, "2026-10-1").click();
 
     expect(observers).toHaveLength(1);
@@ -731,7 +728,7 @@ describe("ResizeObserver 与销毁", () => {
   });
 
   it("销毁后 popup 节点被移除，事件监听全部解除", () => {
-    const instance = create({ trigger: "hover", render: sharedRender });
+    const instance = create(sharedDecorate, { popup: { trigger: "hover" } });
     const cell = cellOf(instance.el, "2026-10-1");
 
     pointer(cell, "pointerover");

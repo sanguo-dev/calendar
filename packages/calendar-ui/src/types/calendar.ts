@@ -98,8 +98,8 @@ export interface CalendarBadge {
   tone?: string;
 }
 
-/** 适配器对单个格子的装饰 */
-export interface DayDecoration<TData = unknown> {
+/** 适配器 / 单天回调对单个格子的全部内容 */
+export interface DayContent<TData = unknown> {
   /** 格子副标题，例如节气、节日、农历日 */
   subtitle?: string;
   /** 左上角小标记；不传则不显示 */
@@ -108,7 +108,12 @@ export interface DayDecoration<TData = unknown> {
   data?: TData;
   /** 覆盖默认 aria-label；不传时由日期、标记、副标题拼接 */
   ariaLabel?: string;
+  /** 这一天的 popup；存在就表示有 popup（日期格右上角有绿点） */
+  popup?: DayPopupContent;
 }
+
+/** 单天内容回调：返回 null 表示这一天交给 adapter（或什么都没有） */
+export type DayContentRenderer<TData = unknown> = (day: CalendarDate) => DayContent<TData> | null;
 
 /** 每次渲染月视图时传给适配器的上下文 */
 export interface MonthInput {
@@ -137,12 +142,12 @@ export interface CalendarAdapter<TData = unknown> {
   readonly id: string;
 
   /**
-   * 生成当前月的 42 个格子的装饰
+   * 生成当前月的 42 个格子的内容
    *
-   * 返回数组按索引和 input.days 对齐；没有装饰的位置返回 null。
+   * 返回数组按索引和 input.days 对齐；没有内容的位置返回 null。
    * 每次换月、选中、重新渲染都会调用，适配器应自行缓存重计算。
    */
-  decorateMonth(input: MonthInput): ReadonlyArray<DayDecoration<TData> | null>;
+  contentMonth(input: MonthInput): ReadonlyArray<DayContent<TData> | null>;
 }
 
 /** 日历中的一格 */
@@ -165,6 +170,8 @@ export interface CalendarDay<TData = null> extends CalendarDate {
   badge: CalendarBadge | null;
   /** 适配器透传的数据 */
   data: TData | null;
+  /** 这一天的 popup 内容；为 null 表示没有 popup，也没有绿点 */
+  popup: DayPopupContent | null;
   /** 无障碍名称 */
   ariaLabel: string;
 }
@@ -178,10 +185,34 @@ export type DayPopupItem = DayPopupStringItem | Node;
 /** popup 的触发方式 */
 export type DayPopupTrigger = "click" | "hover" | "focus" | "auto";
 
+/**
+ * 一天的 popup 内容
+ *
+ * 这个对象存在本身就表示「这一天有 popup」，绿点由它决定，不需要先算内容。
+ */
+export interface DayPopupContent {
+  /** 覆盖弹层头部的「日期 · 条数」文案；不传就用 locale.popupTitle */
+  title?: string;
+  /**
+   * 内容项
+   *
+   * - 数组：已经就绪，直接渲染；
+   * - 函数：打开弹层时才调用一次，用来把内容物化推迟到真正需要的时候。
+   *
+   * 每一项是 `[time, title, detail]`（字段可省略）或一个 `Node`。
+   */
+  items: readonly DayPopupItem[] | (() => readonly DayPopupItem[]);
+}
+
 /** popup 的定位方式 */
 export type DayPopupPlacement = "auto" | "top" | "bottom" | "center";
 
-/** 日期格 popup 配置 */
+/**
+ * 日期格 popup 的交互配置
+ *
+ * 内容不在这里给：每一天的内容写在 `DayContent.popup` 里（`contentDay` 或 adapter 提供），
+ * `popup` 这个选项只负责「怎么打开、放哪、什么语义」。
+ */
 export interface CalendarPopupOptions {
   /**
    * 触发方式，默认 "click"
@@ -192,17 +223,6 @@ export interface CalendarPopupOptions {
    * - `auto`：支持 hover 的设备用 hover，否则用 click。
    */
   trigger?: DayPopupTrigger;
-  /**
-   * 返回这一天的 popup 内容；空数组表示这一天没有 popup，也不显示绿点
-   *
-   * 数组里每一项是：
-   * - `[time, title, detail]`：用库的默认 title / detail 结构，字段可省略；
-   * - `Node`：完全由使用方决定结构。
-   *
-   * 库在创建 / 重绘时调用 `render(day)` 计算绿点，并把结果缓存到打开时使用；
-   * 所以数据要在创建日历前准备好，`render` 必须是同步纯函数。
-   */
-  render(day: CalendarDate): readonly DayPopupItem[];
   /** 定位方式，默认 "auto" */
   placement?: DayPopupPlacement;
   /** 语义，默认 click 为 dialog，其余为 tooltip */
@@ -283,6 +303,16 @@ export interface CalendarOptions<TData = null> {
   onMonthChange?: (year: number, month: number) => void;
   /** 日历适配器；不传时就是纯公历 */
   adapter?: CalendarAdapter<TData>;
+  /**
+   * 单天内容；返回对象表示这一天用这个对象的全部字段，返回 null 表示交给 adapter
+   *
+   * 和 `adapter.contentMonth` 是同一份 `DayContent` 契约：adapter 负责整月，
+   * 这个回调负责某一天，两者可以同时用，单天回调优先（整块覆盖，不做逐字段合并）。
+   *
+   * 每次重绘会对每个可见格子调用一次（单月 42 次），所以这里只做「有没有」的判断；
+   * popup 内容要物化时用 `popup.items: () => [...]` 推迟到打开弹层。
+   */
+  contentDay?: DayContentRenderer<TData>;
 }
 
 /** 关闭日历的选项 */

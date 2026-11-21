@@ -21,7 +21,7 @@ const inputOf = function (year: number, month: number, days: CalendarDate[]): Mo
 describe("createLunarAdapter", () => {
   it("输出副标题、休班标记和农历数据", () => {
     const adapter = createLunarAdapter();
-    const decorations = adapter.decorateMonth(
+    const decorations = adapter.contentMonth(
       inputOf(2026, 10, [dateOf(2026, 10, 1), dateOf(2026, 10, 10), dateOf(2026, 10, 11)]),
     );
 
@@ -43,9 +43,9 @@ describe("createLunarAdapter", () => {
     });
 
     const day = [dateOf(2026, 11, 15)];
-    expect(a.decorateMonth(inputOf(2026, 11, day))[0]?.data?.gljr).toContain("A 节");
-    expect(a.decorateMonth(inputOf(2026, 11, day))[0]?.data?.gljr).not.toContain("B 节");
-    expect(b.decorateMonth(inputOf(2026, 11, day))[0]?.data?.gljr).toContain("B 节");
+    expect(a.contentMonth(inputOf(2026, 11, day))[0]?.data?.gljr).toContain("A 节");
+    expect(a.contentMonth(inputOf(2026, 11, day))[0]?.data?.gljr).not.toContain("B 节");
+    expect(b.contentMonth(inputOf(2026, 11, day))[0]?.data?.gljr).toContain("B 节");
   });
 
   it("自定义 xiu / ban 直接反映到标记", () => {
@@ -53,7 +53,7 @@ describe("createLunarAdapter", () => {
       holidays: { setRest: { 2026: { xiu: ["0110"], ban: ["0111"] } } },
     });
 
-    const decorations = adapter.decorateMonth(
+    const decorations = adapter.contentMonth(
       inputOf(2026, 1, [dateOf(2026, 1, 10), dateOf(2026, 1, 11)]),
     );
 
@@ -63,7 +63,7 @@ describe("createLunarAdapter", () => {
 
   it("超出支持范围的日期返回 null", () => {
     const adapter = createLunarAdapter();
-    const decorations = adapter.decorateMonth(inputOf(2101, 1, [dateOf(2101, 1, 1)]));
+    const decorations = adapter.contentMonth(inputOf(2101, 1, [dateOf(2101, 1, 1)]));
 
     expect(decorations[0]).toBeNull();
   });

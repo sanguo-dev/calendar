@@ -31,6 +31,7 @@ export const createDayBuilder = function <TData = null>(
       rangeEnd: state.rangeEnd,
       locale: config.locale,
       adapter: config.adapter,
+      contentDay: config.contentDay,
       isDisabled: disabled,
       subtitle: config.subtitle,
     });
@@ -64,7 +65,7 @@ const updatePanelLabels = function (
 export const createRenderer = function <TData = null>(
   deps: RendererDeps<TData>,
 ): (animateRows?: boolean) => CalendarDay<TData>[][] {
-  const { root, config, state, bounds, header, panels, panelEls, collapse, popup } = deps;
+  const { root, config, state, bounds, header, panels, panelEls, collapse } = deps;
   /** 是否已经出现过副标题。 */
   let hasSubtitle = false;
   /** 没有适配器也没有自定义副标题时，42 个格子不可能有副标题，连扫描都省掉 */
@@ -95,7 +96,7 @@ export const createRenderer = function <TData = null>(
     updateNav(header, bounds, state);
     collapse.updateRows(dayLists, animateRows);
     collapse.updateButton();
-    popup?.sync();
+    deps.syncPopup(dayLists);
 
     return dayLists;
   };

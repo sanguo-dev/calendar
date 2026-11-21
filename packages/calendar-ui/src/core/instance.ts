@@ -84,14 +84,14 @@ class CalendarInstanceImpl<TData = null> implements CalendarInstance {
   }
 
   close(options: CalendarCloseOptions = {}): void {
-    const { root, pickerLayer, popup } = this.runtime;
+    const { root, pickerLayer } = this.runtime;
     const { restoreFocus } = options;
     const hadFocus = root.contains(this.doc.activeElement);
 
     // 年月选择层自己带外部点击 / Esc 监听和 inert，必须走它自己的 close
     pickerLayer?.close();
     // 让 popup 先把焦点还给日期格，再统一还给触发元素
-    popup?.close(true);
+    this.runtime.getPopup()?.close(true);
 
     // 关选择层会把焦点移到头部标题，这里一并算作「焦点原本就在日历里」
     const focusedInside = root.contains(this.doc.activeElement);
@@ -141,12 +141,12 @@ class CalendarInstanceImpl<TData = null> implements CalendarInstance {
   setTheme(theme: CalendarTheme): void {
     this.runtime.config.theme = theme;
     this.runtime.root.dataset.theme = theme;
-    this.runtime.popup?.refreshTheme();
+    this.runtime.getPopup()?.refreshTheme();
   }
 
   destroy(): void {
-    const { root, popup, slide, pickerLayer, picker, collapse, header, panels } = this.runtime;
-    popup?.destroy();
+    const { root, slide, pickerLayer, picker, collapse, header, panels } = this.runtime;
+    this.runtime.getPopup()?.destroy();
     slide.stop();
     pickerLayer?.destroy();
     picker?.destroy();

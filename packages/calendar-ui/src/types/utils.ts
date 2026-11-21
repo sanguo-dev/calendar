@@ -1,4 +1,9 @@
-import type { CalendarAdapter, SubtitleRenderer, WeekStartsOn } from "./calendar";
+import type {
+  CalendarAdapter,
+  DayContentRenderer,
+  SubtitleRenderer,
+  WeekStartsOn,
+} from "./calendar";
 import type { CalendarLocale } from "./locale";
 
 /** buildDays 的入参 */
@@ -21,8 +26,10 @@ export interface BuildDaysOptions<TData = null> {
   locale: CalendarLocale;
   /** 判断某个日期是否不可选；不传表示全部都可用 */
   isDisabled?: (date: Date) => boolean;
-  /** 自定义副标题，优先于 adapter */
+  /** 自定义副标题，优先于内容里的 subtitle */
   subtitle?: SubtitleRenderer;
   /** 日历适配器；不传时就是纯公历 */
   adapter?: CalendarAdapter<TData>;
+  /** 单天内容，优先于 adapter */
+  contentDay?: DayContentRenderer<TData>;
 }

@@ -1,4 +1,4 @@
-import type { CalendarDay, GridHandle, GridOptions } from "../types";
+import type { CalendarDay, DayPopupContent, GridHandle, GridOptions } from "../types";
 import { createDate, dateKeyOf } from "../utils/date";
 import { node, setRowVisibility } from "../utils/dom";
 import { prefersReducedMotion, readCssDuration, readCssEasing } from "../utils/motion";
@@ -36,6 +36,11 @@ class CalendarGrid<TData = null> implements GridHandle<TData> {
   private readonly keys = new Int32Array(CELL_COUNT);
   /** 每个格子的 adapter data 引用；day 对象不保留，点击时再组装 */
   private readonly data: (TData | null)[] = Array.from({ length: CELL_COUNT }, () => null);
+  /** 每个格子的 popup 内容；打开弹层时按格子取，省掉再问一次内容回调 */
+  private readonly popups: (DayPopupContent | null)[] = Array.from(
+    { length: CELL_COUNT },
+    () => null,
+  );
   /** 单选模式下最近一次渲染的选中格；选中日期跨月后可能不在 42 格里 */
   private selectedIndex = -1;
   /** 上一次应用的行集合，重复渲染时直接跳过 */
@@ -48,7 +53,7 @@ class CalendarGrid<TData = null> implements GridHandle<TData> {
     this.el = node("div", "cui__grid");
     this.rowEls = Array.from({ length: ROW_COUNT }, () => node("div", "cui__week"));
     this.cells = Array.from({ length: CELL_COUNT }, () => createDayCell());
-    this.marks = createDayMarks(CELL_COUNT);
+    this.marks = createDayMarks(CELL_COUNT, options.popupDialog);
 
     this.rowEls.forEach((row, index) => {
       row.append(...this.cells.slice(index * 7, index * 7 + 7));
@@ -68,14 +73,22 @@ class CalendarGrid<TData = null> implements GridHandle<TData> {
       if (!day || !cell) {
         this.keys[i] = 0;
         this.data[i] = null;
+        this.popups[i] = null;
         continue;
       }
 
       this.keys[i] = dateKeyOf(day.year, day.month, day.day);
       this.data[i] = day.data;
+      this.popups[i] = day.popup;
       setDay(cell, day, this.marks, i);
       if (day.isSelected && this.selectedIndex < 0) this.selectedIndex = i;
     }
+  }
+
+  /** 取某个格子这一轮渲染出的 popup 内容；没有时返回 null */
+  popupOf(cell: HTMLElement): DayPopupContent | null {
+    const index = this.cells.indexOf(cell as HTMLButtonElement);
+    return index < 0 ? null : (this.popups[index] ?? null);
   }
 
   /** 点选：按日期 key 找到格子，再走 selectAt */
@@ -174,6 +187,7 @@ class CalendarGrid<TData = null> implements GridHandle<TData> {
       subtitle: sub?.textContent ?? "",
       badge,
       data: this.data[index] ?? null,
+      popup: this.popups[index] ?? null,
       ariaLabel: cell.getAttribute("aria-label") ?? "",
     };
   }

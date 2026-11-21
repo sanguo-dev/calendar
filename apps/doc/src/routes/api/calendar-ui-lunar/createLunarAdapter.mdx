@@ -50,11 +50,11 @@ const instance = createCalendarUI(container, { adapter });
 ```ts
 interface CalendarAdapter<TData = unknown> {
   readonly id: string;
-  decorateMonth(input: MonthInput): ReadonlyArray<DayDecoration<TData> | null>;
+  contentMonth(input: MonthInput): ReadonlyArray<DayContent<TData> | null>;
 }
 ```
 
-`id` 形如 `"lunar-1"`，用于调试。`decorateMonth` 为每月的 42 个日期生成：
+`id` 形如 `"lunar-1"`，用于调试。`contentMonth` 为每月的 42 个日期生成：
 
 | 字段       | 说明                                                                                                   |
 | ---------- | ------------------------------------------------------------------------------------------------------ |
@@ -65,7 +65,7 @@ interface CalendarAdapter<TData = unknown> {
 ## 说明
 
 - 同一份 `holidays` 对象 + 相同的 `replaceHolidays` 会复用内部转换器；
-- 月份装饰按「转换器 + 年 + 月 + `weekStartsOn`」缓存，最多保留 24 个月；
+- 月份内容按「转换器 + 年 + 月 + `weekStartsOn`」缓存，最多保留 24 个月；
 - 不同 `holidays` 对象互不影响；
 - `holidays` 在创建时校验并冻结。
 

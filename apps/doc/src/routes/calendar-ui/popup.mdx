@@ -6,26 +6,34 @@ import CalendarUIPopup from "../../components/demo/calendar-ui-popup";
 
 # 日期格 popup
 
-数据在 `createCalendarUI` 之前准备好，直接传给 `popup.render(day)`。库在创建 / 重绘时调用它：
+内容写在**一天的内容**里：`contentDay(day)` 返回对象时带上 `popup`，这一天就有弹层、也有绿点；返回 `null` 或没有 `popup` 字段，就没有。`popup` 选项本身只负责「怎么打开、放哪、什么语义」。
 
-- 返回非空数组 → 这一天有 popup，日期格右上角自动出现绿点；
-- 返回空数组 → 这一天没有 popup，也没有绿点；
-- 打开弹层时复用创建时渲染好的内容，自动补一行「日期 · 条数」头部。
+```ts
+createCalendarUI(host, {
+  contentDay: (day) => (hasEvent(day) ? { popup: { items: [...] } } : null),  // 内容
+  // popup 选项可省略：不写就是 click + dialog + 自动定位
+});
+```
+
+- 内容里的 `popup` 存在 → 这一天有 popup，日期格右上角自动出现绿点；
+- `popup.items` 可以是数组，也可以是函数：函数推迟到打开弹层时才调用；
+- 头部「日期 · 条数」由库自动补上，也可以用 `popup.title` 覆盖。
 
 <CalendarUIPopup />
 
 ## 交互约定
 
-- **绿点由库内部算**：`render(day).length > 0` 才显示；
+- **绿点由库内部算**：内容里有 `popup` 就显示；
 - **没有关闭按钮**：点击其他日期、点击空白处、按 `Esc`、换月、滚动或缩放页面都会关闭；
-- **数据必须在创建前准备好**：`render` 是同步纯函数，库不负责请求数据；
+- **渲染期只判断「有没有」**：`contentDay` 每次重绘会被调用 42 次（单月），所以别在里面物化内容；重的内容写成 `items: () => [...]`，推迟到打开时才算；
+- **`contentDay` 必须是同步函数**：库不负责请求数据，数据要在创建前准备好；
 - **点击触发**用 `role="dialog"`，点击日期时仍然会选中日期；
 - **悬停触发**用 `role="tooltip"`，只适合只读内容；移动端没有 hover，交互示例请用 `click` 或 `auto`；
-- 头部「日期 · 条数」里的条数就是 `render` 返回数组的长度，所以一条数据对应数组里的一项。
+- 头部「日期 · 条数」里的条数就是 `items` 的长度，所以一条数据对应数组里的一项。
 
 ## 示例一：系统 UI（点击触发）
 
-这个示例只 import `@sanguo-dev/calendar-ui/style.css`，不写任何 popup 皮肤。`render` 每项返回 `[time, title, detail]` 三个字符串，库生成默认结构：
+这个示例只 import `@sanguo-dev/calendar-ui/style.css`，不写任何 popup 皮肤。`items` 每项返回 `[time, title, detail]` 三个字符串，库生成默认结构：
 
 - `.cui__popup` 默认卡片：背景、边框、圆角、阴影、内边距；
 - `.cui__popup-head`：自动显示「10 月 1 日 · 2 条」；
@@ -70,8 +78,11 @@ const entriesOf = function (day: CalendarDate): readonly PopupEntry[] {
 };
 
 /** 系统 UI：每项返回 [time, title, detail] 三个字符串，由库生成默认结构 */
-const render = function (day: CalendarDate) {
-  return entriesOf(day).map((entry) => [entry.time, entry.title, entry.detail] as const);
+const contentDay = function (day: CalendarDate) {
+  const entries = entriesOf(day);
+  return entries.length > 0
+    ? { popup: { items: entries.map((entry) => [entry.time, entry.title, entry.detail] as const) } }
+    : null;
 };
 
 export default function CalendarUIPopupDefault() {
@@ -85,10 +96,9 @@ export default function CalendarUIPopupDefault() {
       initialDate: "2026-10-01",
       onSelect: (day) => setPicked(keyOf(day)),
       popup: {
-        trigger: "click",
         ariaLabel: "日期详情",
-        render,
       },
+      contentDay,
     });
 
     return () => instance.destroy();
@@ -99,8 +109,8 @@ export default function CalendarUIPopupDefault() {
       <header class="demo-popup-panel-head">
         <h3>系统 UI · 点击触发</h3>
         <p>
-          <code>render</code> 每项返回 <code>[time, title, detail]</code> 三个字符串，库生成默认的
-          title / detail 结构。
+          <code>contentDay</code> 返回 <code>{ popup: { items } }</code>，每项是
+          <code>[time, title, detail]</code> 三个字符串，库生成默认的 title / detail 结构。
         </p>
       </header>
       <div ref={(el) => (host = el)} />
@@ -112,7 +122,7 @@ export default function CalendarUIPopupDefault() {
 
 ## 示例二：自定义 UI（悬停触发）
 
-这个示例用另一份数据、另一个 `render`：返回 Node 数组，自己画一条时间轴，结构、类名、样式都和默认 UI 不同。库仍然自动加「日期 · 条数」头部，但头部和容器外观也由下面的 CSS 改掉。
+这个示例用另一份数据、另一个 `contentDay`：`items` 是函数，打开弹层时才建 Node 数组，自己画一条时间轴，结构、类名、样式都和默认 UI 不同。库仍然自动加「日期 · 条数」头部，但头部和容器外观也由下面的 CSS 改掉。
 
 除了数据里的字段，Node 里还可以塞完全不绑定数据的 HTML：每条 `detail` 末尾都拼一个通用署名；2026-10-1 当天给 `time` 补一个表情，并且只给「国庆节」这条的标题加一面旗子。
 
@@ -201,10 +211,14 @@ const createRow = function (entry: PopupEntry, highlight: boolean): HTMLElement 
   return row;
 };
 
-const render = function (day: CalendarDate): HTMLElement[] {
-  // 只是示例里的额外装饰，不属于 POPUPS 数据
+const contentDay = function (day: CalendarDate) {
+  // 只是示例里的额外内容，不属于 POPUPS 数据
   const highlight = day.year === 2026 && day.month === 10 && day.day === 1;
-  return entriesOf(day).map((entry) => createRow(entry, highlight));
+  const entries = entriesOf(day);
+  if (entries.length === 0) return null;
+
+  // 自定义 UI 每行都要建 DOM，所以把物化推迟到真正打开弹层时
+  return { popup: { items: () => entries.map((entry) => createRow(entry, highlight)) } };
 };
 
 export default function CalendarUIPopupCustom() {
@@ -220,8 +234,8 @@ export default function CalendarUIPopupCustom() {
       popup: {
         trigger: "hover",
         ariaLabel: "日期详情",
-        render,
       },
+      contentDay,
     });
 
     // 自定义示例：只在这里给日历根节点加类，CSS 由使用方自己写
@@ -235,7 +249,8 @@ export default function CalendarUIPopupCustom() {
       <header class="demo-popup-panel-head">
         <h3>自定义 UI · 悬停触发</h3>
         <p>
-          <code>render</code> 返回 Node 数组，每个 Node 带自己的类名，样式完全由使用方 CSS 决定。
+          <code>items</code> 是返回 Node 数组的函数，每个 Node 带自己的类名，样式完全由使用方 CSS
+          决定。
         </p>
       </header>
       <div ref={(el) => (host = el)} />
@@ -390,19 +405,35 @@ export default function CalendarUIPopupCustom() {
 
 ## 渲染规则
 
+内容挂在「一天的内容」上，和 badge / subtitle 是同一个返回值：
+
 ```ts
-render(day: CalendarDate): readonly DayPopupItem[];
+contentDay(day: CalendarDate): DayContent | null;
+interface DayContent {
+  badge?: CalendarBadge;
+  subtitle?: string;
+  ariaLabel?: string;
+  data?: unknown;
+  popup?: DayPopupContent;   // 存在 = 有 popup = 有绿点
+}
+interface DayPopupContent {
+  title?: string;                                                  // 覆盖头部文案
+  items: readonly DayPopupItem[] | (() => readonly DayPopupItem[]);
+}
 type DayPopupStringItem = readonly [time?: string, title?: string, detail?: string];
 type DayPopupItem = DayPopupStringItem | Node;
 ```
 
-- `render` 在创建 / 重绘时调用，返回结果会缓存，打开 popup 时不再调用；
-- 数组长度就是头部显示的「几条」，一条数据对应一项；
+- **内容里有 `popup` → 有绿点，点击打开**；没有或内容返回 `null` → 没有绿点；
+- `contentDay` 在每次重绘时对每个可见格子调用一次（单月 42 次），所以只做「有没有」的判断；
+- 内容在渲染期随内容一起产出并留在格子上，打开时直接用，**不会**再调一次 `contentDay`；
+- `items` 传数组：内容已经就绪，等打开时才建 DOM；传函数：打开弹层时才调用一次，用来推迟物化；
+- 数组长度就是头部显示的「几条」，一条数据对应一项；`title` 可以直接覆盖整行文案；
 - 默认项是 `[time, title, detail]`，库生成 `.cui__popup-title`（`.cui__popup-time` + `.cui__popup-name`）和 `.cui__popup-detail`；
 - 字段可以省略或传空字符串，对应 UI 不渲染；三个字段都为空时这一项直接忽略；
-- `Node`：库只包一层 `.cui__popup-item`，内部结构和类名完全由使用方决定；可以混数据字段，也可以只放静态 HTML；Node 要在 `render` 里新建，不要跨日期复用同一个实例；
-- 返回空数组 → 没有绿点，点击也不会打开；
-- `render` 必须是同步纯函数，不能返回 Promise，也不要在里面发请求；数据请在 `createCalendarUI` 之前准备好。
+- `Node`：库只包一层 `.cui__popup-item`，内部结构和类名完全由使用方决定；可以混数据字段，也可以只放静态 HTML；Node 要在 `items` 里新建，不要跨日期复用同一个实例；
+- `contentDay` / `items` 必须是同步函数，不能返回 Promise，也不要在里面发请求；数据请在 `createCalendarUI` 之前准备好；
+- `popup` 选项是可选的：不写就用默认交互（click + dialog + auto 定位），内容里有 `popup` 就自动生效。
 
 ## 触发方式
 

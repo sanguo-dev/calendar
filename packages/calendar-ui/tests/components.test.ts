@@ -55,6 +55,7 @@ const dayOf = function (day: number, patch: Partial<CalendarDay> = {}): Calendar
     subtitle: "",
     badge: null,
     data: null,
+    popup: null,
     ariaLabel: `2026-10-${day}`,
     ...patch,
   };
@@ -981,6 +982,7 @@ describe("折叠控制器", () => {
       mode,
       requestedMonths: 1,
       showHeader: true,
+      popup: { trigger: "click", placement: "auto", role: "dialog" },
       animation: {
         monthTransition: "none",
         monthDuration: 220,

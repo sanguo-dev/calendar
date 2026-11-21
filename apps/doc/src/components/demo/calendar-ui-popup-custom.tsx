@@ -82,10 +82,14 @@ const createRow = function (entry: PopupEntry, highlight: boolean): HTMLElement 
   return row;
 };
 
-const render = function (day: CalendarDate): HTMLElement[] {
+const contentDay = function (day: CalendarDate) {
   // 只是示例里的额外装饰，不属于 POPUPS 数据
   const highlight = day.year === 2026 && day.month === 10 && day.day === 1;
-  return entriesOf(day).map((entry) => createRow(entry, highlight));
+  const entries = entriesOf(day);
+  if (entries.length === 0) return null;
+
+  // 自定义 UI 每行都要建 DOM，所以把物化推迟到真正打开弹层时
+  return { popup: { items: () => entries.map((entry) => createRow(entry, highlight)) } };
 };
 
 export default function CalendarUIPopupCustom() {
@@ -101,8 +105,8 @@ export default function CalendarUIPopupCustom() {
       popup: {
         trigger: "hover",
         ariaLabel: "日期详情",
-        render,
       },
+      contentDay,
     });
 
     // 自定义示例：只在这里给日历根节点加类，CSS 由使用方自己写

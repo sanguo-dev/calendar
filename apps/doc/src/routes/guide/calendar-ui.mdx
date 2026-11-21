@@ -54,27 +54,27 @@ interface CalendarAnimationOptions {
 }
 ```
 
-| 选项            | 类型                                   | 默认       | 说明                             |
-| --------------- | -------------------------------------- | ---------- | -------------------------------- |
-| `initialDate`   | `CalendarDateInput`                    | 今天       | 初始日期；越界时夹到最近可选日   |
-| `minDate`       | `CalendarDateInput`                    | -          | 最小可选日期（包含）             |
-| `maxDate`       | `CalendarDateInput`                    | -          | 最大可选日期（包含）             |
-| `disabledDates` | `readonly CalendarDateInput[]`         | `[]`       | 禁止选中的日期                   |
-| `mode`          | `"single" \| "range"`                  | `"single"` | 单选 / 范围                      |
-| `months`        | `1 \| 2`                               | `1`        | 范围模式显示月数                 |
-| `animation`     | `CalendarAnimationOptions`             | -          | 动画与折叠，默认全关             |
-| `weekStartsOn`  | `0 \| 1`                               | `1`        | 0 周日，1 周一                   |
-| `locale`        | `CalendarLocale \| "zh-CN" \| "en-US"` | `"zh-CN"`  | 界面语言                         |
-| `theme`         | `"light" \| "dark" \| "auto"`          | `"auto"`   | 主题                             |
-| `size`          | `"min" \| "normal" \| "fill"`          | `"normal"` | 尺寸模板：最小 / 正常 / 跟随容器 |
-| `header`        | `boolean`                              | `true`     | 是否渲染头部与月份选择层         |
-| `renderHeader`  | `HeaderRenderer`                       | -          | 自定义头部                       |
-| `popup`         | `CalendarPopupOptions`                 | -          | 日期格 popup；不传则不启用       |
-| `adapter`       | `CalendarAdapter<TData>`               | -          | 装饰适配器                       |
-| `subtitle`      | `SubtitleRenderer`                     | -          | 自定义副标题，优先于 adapter     |
-| `onSelect`      | `(day) => void`                        | -          | 选中日期                         |
-| `onRangeChange` | `(range) => void`                      | -          | 范围变化                         |
-| `onMonthChange` | `(year, month) => void`                | -          | 换月                             |
+| 选项            | 类型                                   | 默认       | 说明                                 |
+| --------------- | -------------------------------------- | ---------- | ------------------------------------ |
+| `initialDate`   | `CalendarDateInput`                    | 今天       | 初始日期；越界时夹到最近可选日       |
+| `minDate`       | `CalendarDateInput`                    | -          | 最小可选日期（包含）                 |
+| `maxDate`       | `CalendarDateInput`                    | -          | 最大可选日期（包含）                 |
+| `disabledDates` | `readonly CalendarDateInput[]`         | `[]`       | 禁止选中的日期                       |
+| `mode`          | `"single" \| "range"`                  | `"single"` | 单选 / 范围                          |
+| `months`        | `1 \| 2`                               | `1`        | 范围模式显示月数                     |
+| `animation`     | `CalendarAnimationOptions`             | -          | 动画与折叠，默认全关                 |
+| `weekStartsOn`  | `0 \| 1`                               | `1`        | 0 周日，1 周一                       |
+| `locale`        | `CalendarLocale \| "zh-CN" \| "en-US"` | `"zh-CN"`  | 界面语言                             |
+| `theme`         | `"light" \| "dark" \| "auto"`          | `"auto"`   | 主题                                 |
+| `size`          | `"min" \| "normal" \| "fill"`          | `"normal"` | 尺寸模板：最小 / 正常 / 跟随容器     |
+| `header`        | `boolean`                              | `true`     | 是否渲染头部与月份选择层             |
+| `renderHeader`  | `HeaderRenderer`                       | -          | 自定义头部                           |
+| `popup`         | `CalendarPopupOptions`                 | 默认交互   | 弹层触发 / 定位 / 语义；不传用 click |
+| `adapter`       | `CalendarAdapter<TData>`               | -          | 内容适配器                           |
+| `subtitle`      | `SubtitleRenderer`                     | -          | 自定义副标题，优先于 adapter         |
+| `onSelect`      | `(day) => void`                        | -          | 选中日期                             |
+| `onRangeChange` | `(range) => void`                      | -          | 范围变化                             |
+| `onMonthChange` | `(year, month) => void`                | -          | 换月                                 |
 
 ## 日期输入
 
@@ -244,21 +244,26 @@ const POPUPS: Record<string, readonly PopupEntry[]> = {
 };
 
 createCalendarUI(container, {
-  popup: {
-    trigger: "click",
-    render: (day) => {
-      const entries = POPUPS[`${day.year}-${day.month}-${day.day}`] ?? [];
-      return entries.map((entry) => [entry.time, entry.title, entry.detail] as const);
-    },
+  popup: { trigger: "click" },
+  contentDay: (day) => {
+    const entries = POPUPS[`${day.year}-${day.month}-${day.day}`];
+    return entries
+      ? {
+          popup: {
+            items: entries.map((entry) => [entry.time, entry.title, entry.detail] as const),
+          },
+        }
+      : null;
   },
 });
 ```
 
-- `render(day)` 返回 `Array<readonly [time?, title?, detail?] | Node>`；空数组表示这一天没有 popup，也没有绿点；
+- 内容里有 `popup` 表示这一天有弹层，没有就是没有；
+- `items` 是 `Array<readonly [time?, title?, detail?] | Node>`，也可以传返回数组的函数，把内容推迟到打开弹层时才算；
 - `[time, title, detail]` 会生成 `.cui__popup-title` / `.cui__popup-detail` 的默认结构；字段省略或为空就不渲染对应 UI；
-- 绿点由库内部按 `render(day).length > 0` 计算；
-- 弹层打开时自动显示「日期 · 条数」头部，条数就是数组长度；
-- `render` 在创建 / 重绘时调用并缓存，必须是同步纯函数；数据要在创建日历前准备好；
+- 绿点由库内部按内容里有没有 `popup` 决定；
+- 弹层打开时自动显示「日期 · 条数」头部，条数就是 `items` 的长度；
+- `contentDay` 在每次重绘时对每个可见格子调用一次，必须是同步函数；数据要在创建日历前准备好；
 - 背景、圆角和内容排版都可以直接用 CSS 覆盖 `.cui__popup`、`.cui__popup-head`、`.cui__popup-title`、`.cui__popup-detail`；
 - 完整示例见 [日期格 popup](/calendar-ui/popup)。
 
@@ -302,10 +307,10 @@ createCalendarUI(container, {
 ```ts
 interface CalendarAdapter<TData = unknown> {
   readonly id: string;
-  decorateMonth(input: MonthInput): ReadonlyArray<DayDecoration<TData> | null>;
+  contentMonth(input: MonthInput): ReadonlyArray<DayContent<TData> | null>;
 }
 
-interface DayDecoration<TData> {
+interface DayContent<TData> {
   subtitle?: string;
   badge?: { text: string; tone?: string };
   data?: TData;
@@ -313,4 +318,4 @@ interface DayDecoration<TData> {
 }
 ```
 
-`decorateMonth` 每次拿到 42 个日期，返回按索引对齐的装饰数组；没有装饰返回 `null`。第三方适配器演示见 [第三方适配器](/calendar-ui/custom)。
+`contentMonth` 每次拿到 42 个日期，返回按索引对齐的内容数组；没有内容返回 `null`。第三方适配器演示见 [第三方适配器](/calendar-ui/custom)。

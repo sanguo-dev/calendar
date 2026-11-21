@@ -37,7 +37,7 @@ instance.destroy();
 | `size`          | `"min" \| "normal" \| "fill"`           | 尺寸模板，默认 `"normal"`             |
 | `header`        | `boolean`                               | 是否渲染头部与月份选择层，默认 `true` |
 | `renderHeader`  | `HeaderRenderer`                        | 自定义头部，替换默认的 `‹ 标题 ›`     |
-| `popup`         | `CalendarPopupOptions`                  | 日期格 popup；不传则不启用            |
+| `popup`         | `CalendarPopupOptions`                  | 弹层交互；不传用默认 click+           |
 | `adapter`       | `CalendarAdapter<TData>`                | 日历适配器；不传就是纯公历            |
 | `onSelect`      | `(day: CalendarDay<TData>) => void`     | 选中某一天时触发                      |
 | `onRangeChange` | `(range: CalendarRange) => void`        | 范围变化时触发                        |
@@ -122,21 +122,25 @@ const POPUPS: Record<string, readonly PopupEntry[]> = {
 };
 
 const instance = createCalendarUI(container, {
-  popup: {
-    trigger: "click",
-    render: (day) => {
-      const entries = POPUPS[`${day.year}-${day.month}-${day.day}`] ?? [];
-      return entries.map((entry) => [entry.time, entry.title, entry.detail] as const);
-    },
+  contentDay: (day) => {
+    const entries = POPUPS[`${day.year}-${day.month}-${day.day}`];
+    return entries
+      ? {
+          popup: {
+            items: entries.map((entry) => [entry.time, entry.title, entry.detail] as const),
+          },
+        }
+      : null;
   },
 });
 ```
 
-- 数据在创建前准备好，`render(day)` 返回 `Array<readonly [time?, title?, detail?] | Node>`；空数组表示没有 popup；
+- 数据在创建前准备好；内容里有 `popup` 表示这一天有弹层，没有就是没有；
+- `items` 是 `Array<readonly [time?, title?, detail?] | Node>`，也可以传返回数组的函数，把内容推迟到打开时才算；
 - `[time, title, detail]` 会生成 `.cui__popup-title`（含 `.cui__popup-time` / `.cui__popup-name`）和 `.cui__popup-detail`；字段省略或为空就不渲染对应 UI；
-- 绿点由库内部按 `render(day).length > 0` 计算；
-- 打开时自动显示「日期 · 条数」头部，条数就是数组长度；
-- `render` 在创建 / 重绘时调用并缓存，必须是同步纯函数；
+- 绿点由库内部按内容里有没有 `popup` 决定；
+- 打开时自动显示「日期 · 条数」头部，条数就是 `items` 的长度；
+- `contentDay` 在每次重绘时对每个可见格子调用一次，必须是同步函数；
 - Node 直接 append，内部结构完全由使用方决定；
 - 默认皮肤是 `.cui__popup` 卡片 + `.cui__popup-head` 头部 + `.cui__popup-item` 内容层，可以直接用 CSS 覆盖；
 - `trigger` 支持 `"click"`（默认）/ `"hover"` / `"focus"` / `"auto"`；移动端没有 hover；
@@ -257,11 +261,11 @@ createCalendarUI(container, { size: "fill" }); // 跟随容器宽度
 ```ts
 interface CalendarAdapter<TData = unknown> {
   readonly id: string;
-  decorateMonth(input: MonthInput): ReadonlyArray<DayDecoration<TData> | null>;
+  contentMonth(input: MonthInput): ReadonlyArray<DayContent<TData> | null>;
 }
 ```
 
-`decorateMonth` 每次拿到 42 个日期，返回同长度的装饰数组：
+`contentMonth` 每次拿到 42 个日期，返回同长度的内容数组：
 
 ```ts
 {

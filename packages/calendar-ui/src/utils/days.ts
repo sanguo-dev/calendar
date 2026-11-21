@@ -1,4 +1,4 @@
-import type { CalendarDate, CalendarDay, DayDecoration, WeekStartsOn } from "../types";
+import type { CalendarDate, CalendarDay, DayContent, WeekStartsOn } from "../types";
 import type { BuildDaysOptions } from "../types";
 import { createDate, dateKey, dateKeyOf, dateStringKey, weekdayOf } from "./date";
 
@@ -34,8 +34,8 @@ export const buildDays = function <TData = null>(
   options: BuildDaysOptions<TData>,
 ): CalendarDay<TData>[] {
   const dates = buildMonthDates(options.year, options.month, options.weekStartsOn);
-  const decorations: ReadonlyArray<DayDecoration<TData> | null> = options.adapter
-    ? options.adapter.decorateMonth({
+  const fromAdapter: ReadonlyArray<DayContent<TData> | null> = options.adapter
+    ? options.adapter.contentMonth({
         year: options.year,
         month: options.month,
         weekStartsOn: options.weekStartsOn,
@@ -55,12 +55,15 @@ export const buildDays = function <TData = null>(
   const hasRange = startKey !== 0 && endKey !== 0;
 
   return dates.map((date, index) => {
-    const decoration = decorations[index] ?? null;
-    const badge = decoration?.badge ?? null;
-    const adapterSubtitle = decoration?.subtitle ?? "";
-    const customSubtitle = options.subtitle?.(date);
-    const subtitle =
-      customSubtitle === null || customSubtitle === undefined ? adapterSubtitle : customSubtitle;
+    // 单天回调整块覆盖 adapter；返回 null（或 undefined）表示这一天交给 adapter
+    const fromCallback = options.contentDay?.(date) ?? null;
+    if (fromCallback !== null && typeof fromCallback !== "object") {
+      throw new TypeError("[calendar-ui] contentDay(day) 必须返回对象或 null");
+    }
+    const content = fromCallback ?? fromAdapter[index] ?? null;
+    const badge = content?.badge ?? null;
+    const subtitle = options.subtitle?.(date) ?? content?.subtitle ?? "";
+    const popup = content?.popup ?? null;
 
     const key = dateKeyOf(date.year, date.month, date.day);
     const isDisabled = options.isDisabled?.(date.date) ?? false;
@@ -68,7 +71,7 @@ export const buildDays = function <TData = null>(
     const isRangeEnd = key === endKey;
     const isInRange = hasRange && key >= startKey && key <= endKey;
 
-    let ariaLabel = decoration?.ariaLabel;
+    let ariaLabel = content?.ariaLabel;
     if (ariaLabel === undefined) {
       // 拼三段文案；不给默认的「无标记无副标题」路径分配数组
       let text = dateStringKey(date.year, date.month, date.day);
@@ -93,7 +96,8 @@ export const buildDays = function <TData = null>(
       isInRange,
       subtitle,
       badge,
-      data: decoration?.data ?? null,
+      data: content?.data ?? null,
+      popup,
       ariaLabel,
     };
   });

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
-import type { CalendarDay, DayDecoration, WeekStartsOn } from "../src/index.ts";
+import type { CalendarDay, DayContent, WeekStartsOn } from "../src/index.ts";
 import { zhCN } from "../src/index.ts";
 import {
   assertBounds,
@@ -433,7 +433,7 @@ describe("buildDays", () => {
   });
 
   it("拼出日期、标记、副标题和禁用文案的 aria-label", () => {
-    const decoration: DayDecoration = {
+    const content: DayContent = {
       subtitle: "国庆节",
       badge: { text: "休" },
       data: null,
@@ -442,8 +442,8 @@ describe("buildDays", () => {
       ...baseOptions(),
       adapter: {
         id: "test",
-        decorateMonth: ({ days: dates }) =>
-          dates.map((date) => (date.month === 10 && date.day === 1 ? decoration : null)),
+        contentMonth: ({ days: dates }) =>
+          dates.map((date) => (date.month === 10 && date.day === 1 ? content : null)),
       },
       isDisabled: (date) => date.getMonth() === 9 && date.getDate() === 1,
     });
@@ -460,7 +460,7 @@ describe("buildDays", () => {
       ...baseOptions(),
       adapter: {
         id: "aria",
-        decorateMonth: ({ days: dates }) =>
+        contentMonth: ({ days: dates }) =>
           dates.map((date) =>
             date.month === 10 && date.day === 2 ? { ariaLabel: "自定义标签" } : null,
           ),
@@ -475,7 +475,7 @@ describe("buildDays", () => {
       ...baseOptions(),
       adapter: {
         id: "sub",
-        decorateMonth: ({ days: dates }) =>
+        contentMonth: ({ days: dates }) =>
           dates.map((date) =>
             date.month === 10 && date.day >= 1 && date.day <= 3
               ? { subtitle: `adapter-${date.day}` }

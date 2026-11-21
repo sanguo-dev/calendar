@@ -34,8 +34,11 @@ const entriesOf = function (day: CalendarDate): readonly PopupEntry[] {
 };
 
 /** 系统 UI：每项返回 [time, title, detail] 三个字符串，由库生成默认结构 */
-const render = function (day: CalendarDate) {
-  return entriesOf(day).map((entry) => [entry.time, entry.title, entry.detail] as const);
+const contentDay = function (day: CalendarDate) {
+  const entries = entriesOf(day);
+  return entries.length > 0
+    ? { popup: { items: entries.map((entry) => [entry.time, entry.title, entry.detail] as const) } }
+    : null;
 };
 
 export default function CalendarUIPopupDefault() {
@@ -49,10 +52,9 @@ export default function CalendarUIPopupDefault() {
       initialDate: "2026-10-01",
       onSelect: (day) => setPicked(keyOf(day)),
       popup: {
-        trigger: "click",
         ariaLabel: "日期详情",
-        render,
       },
+      contentDay,
     });
 
     return () => instance.destroy();

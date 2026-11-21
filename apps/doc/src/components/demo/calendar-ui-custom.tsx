@@ -54,7 +54,7 @@ const getCompanyRest = function (date: Date): CompanyRest | null {
 
 const adapter: CalendarAdapter<CompanyRest> = {
   id: "company-holidays",
-  decorateMonth({ days }) {
+  contentMonth({ days }) {
     return days.map((date) => {
       const rest = getCompanyRest(date.date);
       if (!rest) return null;

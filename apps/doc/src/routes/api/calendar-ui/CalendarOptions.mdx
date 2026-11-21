@@ -36,6 +36,7 @@ interface CalendarOptions<TData = null> {
   onSelect?: (day: CalendarDay<TData>) => void;
   onMonthChange?: (year: number, month: number) => void;
   adapter?: CalendarAdapter<TData>;
+  contentDay?: DayContentRenderer<TData>;
 }
 ```
 
@@ -58,10 +59,11 @@ interface CalendarOptions<TData = null> {
 | `subtitle`      | `SubtitleRenderer`                      | -          | 自定义副标题，优先于适配器；返回 `null` / `undefined` 时回退 |
 | `header`        | `boolean`                               | `true`     | 是否渲染头部与月份选择层                                     |
 | `renderHeader`  | `HeaderRenderer`                        | -          | 自定义头部，替换默认的「‹ 标题 ›」                           |
-| `popup`         | `CalendarPopupOptions`                  | -          | 日期格 popup；不传则不启用                                   |
+| `popup`         | `CalendarPopupOptions`                  | 默认交互   | 弹层的触发 / 定位 / 语义；不传用 click + dialog + auto       |
 | `onSelect`      | `(day: CalendarDay<TData>) => void`     | -          | 选中某一天或范围变化后触发                                   |
 | `onMonthChange` | `(year: number, month: number) => void` | -          | 翻月时触发：`setMonth`、`prevMonth`、`nextMonth`、头部翻页   |
-| `adapter`       | `CalendarAdapter<TData>`                | -          | 日期格装饰适配器；不传时只渲染公历                           |
+| `adapter`       | `CalendarAdapter<TData>`                | -          | 日期格内容适配器；不传时只渲染公历                           |
+| `contentDay`    | `DayContentRenderer<TData>`             | -          | 单天内容；返回对象整块覆盖 adapter，返回 `null` 时回退       |
 
 `popup` 的字段与 `render` 的返回项见 [CalendarPopupOptions](/api/calendar-ui/types/calendar-popup)。
 

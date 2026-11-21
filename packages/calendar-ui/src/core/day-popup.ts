@@ -1,12 +1,13 @@
 import type {
   CalendarDate,
   CalendarLocale,
+  DayPopupContent,
   DayPopupHandle,
   DayPopupItem,
   DayPopupStringItem,
   ResolvedCalendarPopupOptions,
 } from "../types";
-import { createDate, dateKey, parseStringKey } from "../utils/date";
+import { createDate, parseStringKey } from "../utils/date";
 import { node } from "../utils/dom";
 
 /** 从月视图复制到 popup 的 CSS 变量 */
@@ -33,6 +34,12 @@ export interface CreateDayPopupOptions {
   root: HTMLElement;
   popup: ResolvedCalendarPopupOptions;
   locale: CalendarLocale;
+  /**
+   * 按格子取这一天的 popup 内容；null 表示这一天没有 popup
+   *
+   * 内容由渲染管线（`buildDays`）产出，popup 只负责打开 / 关闭 / 定位。
+   */
+  getContent(cell: HTMLElement): DayPopupContent | null;
 }
 
 /** 从 data-date（YYYY-M-D）和 is-outside 还原日期 */
@@ -104,9 +111,6 @@ export const createDayPopup = function (options: CreateDayPopupOptions): DayPopu
   let closeTimer: number | null = null;
   let suppressFocus = false;
   let observer: ResizeObserver | null = null;
-
-  /** 创建 / 重绘时渲染一次内容，打开时直接复用；key 为 YYYYMMDD */
-  const rendered = new Map<number, readonly DayPopupItem[]>();
 
   if (typeof ResizeObserver === "function") {
     observer = new ResizeObserver(() => {
@@ -193,47 +197,42 @@ export const createDayPopup = function (options: CreateDayPopupOptions): DayPopu
     });
   };
 
-  /**
-   * 取某一天的 popup 内容。
-   *
-   * 第一次遇到某个日期时调用 `popup.render(day)` 并缓存，之后重绘和打开都复用；
-   * 返回空数组表示这一天没有 popup，也就不显示绿点。
-   */
-  const contentOf = function (day: CalendarDate): readonly DayPopupItem[] {
-    const key = dateKey(day.date);
-    const cached = rendered.get(key);
-    if (cached !== undefined) return cached;
-
-    const items = popup.render(day);
+  /** 只在真正要渲染弹层时物化内容项：items 可以是数组，也可以是推迟求值的函数 */
+  const itemsOf = function (content: DayPopupContent): readonly DayPopupItem[] {
+    const items = typeof content.items === "function" ? content.items() : content.items;
     if (!Array.isArray(items)) {
-      throw new TypeError("[calendar-ui] popup.render(day) 必须返回数组");
+      throw new TypeError("[calendar-ui] popup 的 items 必须是数组或返回数组的函数");
     }
     for (const item of items) {
       if (!isNode(item) && !isStringItem(item)) {
         throw new TypeError(
-          "[calendar-ui] popup.render(day) 的每一项必须是 [time, title, detail] 或 Node",
+          "[calendar-ui] popup 的 items 每一项必须是 [time, title, detail] 或 Node",
         );
       }
     }
 
     // 字段全空的默认项没有可渲染的内容，直接丢掉
-    const visible = items.filter((item) => isNode(item) || hasStringContent(item));
-    rendered.set(key, visible);
-    return visible;
+    return items.filter((item) => isNode(item) || hasStringContent(item));
   };
 
-  const renderItems = function (day: CalendarDate, items: readonly DayPopupItem[]): void {
+  const renderItems = function (
+    day: CalendarDate,
+    content: DayPopupContent,
+    items: readonly DayPopupItem[],
+  ): void {
     el.replaceChildren();
 
     const head = node("div", "cui__popup-head", undefined, doc);
-    head.textContent = locale.popupTitle
-      ? locale.popupTitle(day, items.length)
-      : defaultPopupTitle(day, items.length);
+    head.textContent =
+      content.title ??
+      (locale.popupTitle
+        ? locale.popupTitle(day, items.length)
+        : defaultPopupTitle(day, items.length));
     el.append(head);
 
     if (items.length === 0) return;
 
-    const content = node("div", "cui__popup-body", undefined, doc);
+    const body = node("div", "cui__popup-body", undefined, doc);
     for (const item of items) {
       const itemEl = node("div", "cui__popup-item", undefined, doc);
       if (isStringItem(item)) {
@@ -251,44 +250,9 @@ export const createDayPopup = function (options: CreateDayPopupOptions): DayPopu
       } else {
         itemEl.append(item);
       }
-      content.append(itemEl);
+      body.append(itemEl);
     }
-    el.append(content);
-  };
-
-  /** 每个格子最近一次算出的绿点状态，日期没变就整段跳过 */
-  const indicatorMarks = new WeakMap<HTMLElement, { key: string; has: boolean }>();
-
-  const updateIndicators = function (): void {
-    const cells = root.querySelectorAll<HTMLButtonElement>(".cui__day");
-    const dialog = popup.role === "dialog";
-
-    cells.forEach((cell) => {
-      let mark = indicatorMarks.get(cell);
-      if (mark === undefined) {
-        mark = { key: "", has: false };
-        indicatorMarks.set(cell, mark);
-      }
-
-      // 同一个格里还是同一天：绿点不会变，不用回头再问一次 popup.render
-      const key = cell.dataset.date ?? "";
-      if (mark.key === key) return;
-      mark.key = key;
-
-      const day = readDay(cell);
-      const hasContent = day !== null && contentOf(day).length > 0;
-
-      // 换月时 42 个格子全换，但绝大多数没有内容，值没变就别写 DOM
-      if (mark.has === hasContent) return;
-      mark.has = hasContent;
-
-      cell.classList.toggle("is-dot", hasContent);
-
-      if (dialog) {
-        if (hasContent) cell.setAttribute("aria-haspopup", "dialog");
-        else cell.removeAttribute("aria-haspopup");
-      }
-    });
+    el.append(body);
   };
 
   const position = function (): void {
@@ -374,8 +338,9 @@ export const createDayPopup = function (options: CreateDayPopupOptions): DayPopu
     const day = readDay(cell);
     if (!day) return;
 
-    const items = contentOf(day);
-    if (items.length === 0) return;
+    const content = options.getContent(cell);
+    if (content === null) return;
+    const items = itemsOf(content);
 
     if (isOpen) close(false);
 
@@ -386,7 +351,7 @@ export const createDayPopup = function (options: CreateDayPopupOptions): DayPopu
     applyTheme();
     el.hidden = false;
     setActiveAria(cell);
-    renderItems(day, items);
+    renderItems(day, content, items);
     position();
     addGlobalListeners();
     focusPopup();
@@ -526,7 +491,6 @@ export const createDayPopup = function (options: CreateDayPopupOptions): DayPopu
       el.remove();
     },
     sync: () => {
-      updateIndicators();
       if (!isOpen) return;
 
       if (root.hidden || !activeCell || !root.contains(activeCell)) {
@@ -538,8 +502,7 @@ export const createDayPopup = function (options: CreateDayPopupOptions): DayPopu
         return;
       }
 
-      const day = readDay(activeCell);
-      if (!day || contentOf(day).length === 0) {
+      if (options.getContent(activeCell) === null) {
         close(false);
         return;
       }
