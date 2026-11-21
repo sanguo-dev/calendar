@@ -7,7 +7,7 @@ import type {
   DayPopupItem,
 } from "../src/index.ts";
 import { createCalendarUI } from "../src/index.ts";
-import { cellOf, dotOf, itemsOf, popupOf } from "./helpers.ts";
+import { cellOf, hasDot, itemsOf, popupOf } from "./helpers.ts";
 
 const cleanups: Array<() => void> = [];
 
@@ -45,10 +45,10 @@ describe("日期格 popup", () => {
     const render = vi.fn(sharedRender);
     const instance = create({ render });
 
-    expect(dotOf(instance.el, "2026-10-1").hidden).toBe(false);
-    expect(dotOf(instance.el, "2026-10-5").hidden).toBe(false);
-    expect(dotOf(instance.el, "2026-10-2").hidden).toBe(true);
-    expect(dotOf(instance.el, "2026-10-31").hidden).toBe(true);
+    expect(hasDot(instance.el, "2026-10-1")).toBe(true);
+    expect(hasDot(instance.el, "2026-10-5")).toBe(true);
+    expect(hasDot(instance.el, "2026-10-2")).toBe(false);
+    expect(hasDot(instance.el, "2026-10-31")).toBe(false);
 
     // 42 个格子都会参与判断，数据源由 render 自己对接
     expect(render).toHaveBeenCalledTimes(42);
@@ -118,7 +118,7 @@ describe("日期格 popup", () => {
   it("空三元组不显示绿点，点击也不弹", () => {
     const instance = create({ render: () => [["", "", ""]] });
 
-    expect(dotOf(instance.el, "2026-10-1").hidden).toBe(true);
+    expect(hasDot(instance.el, "2026-10-1")).toBe(false);
 
     cellOf(instance.el, "2026-10-1").click();
     expect(popupOf().hidden).toBe(true);
@@ -175,7 +175,7 @@ describe("日期格 popup", () => {
   it("返回空数组的日期没有绿点，点击也不弹", () => {
     const instance = create({ render: () => [] });
 
-    expect(dotOf(instance.el, "2026-10-1").hidden).toBe(true);
+    expect(hasDot(instance.el, "2026-10-1")).toBe(false);
 
     cellOf(instance.el, "2026-10-1").click();
     expect(popupOf().hidden).toBe(true);
@@ -248,13 +248,13 @@ describe("日期格 popup", () => {
 
   it("同一批日期再次重绘时不重写绿点", () => {
     const instance = create({ render: sharedRender });
-    const dot = dotOf(instance.el, "2026-10-2");
+    const cell = cellOf(instance.el, "2026-10-2");
 
     let writes = 0;
     const observer = new MutationObserver((records) => {
       writes += records.length;
     });
-    observer.observe(dot, { attributes: true });
+    observer.observe(cell, { attributes: true });
 
     // select() 会整块重绘，42 个格子的日期都没变，绿点一个都不该动
     instance.select("2026-10-20");
@@ -262,6 +262,6 @@ describe("日期格 popup", () => {
     observer.disconnect();
 
     expect(writes).toBe(0);
-    expect(dot.hidden).toBe(true);
+    expect(hasDot(instance.el, "2026-10-2")).toBe(false);
   });
 });

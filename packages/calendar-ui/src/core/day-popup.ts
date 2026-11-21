@@ -257,10 +257,7 @@ export const createDayPopup = function (options: CreateDayPopupOptions): DayPopu
   };
 
   /** 每个格子最近一次算出的绿点状态，日期没变就整段跳过 */
-  const indicatorMarks = new WeakMap<
-    HTMLElement,
-    { key: string; dot: HTMLElement | null; has: boolean }
-  >();
+  const indicatorMarks = new WeakMap<HTMLElement, { key: string; has: boolean }>();
 
   const updateIndicators = function (): void {
     const cells = root.querySelectorAll<HTMLButtonElement>(".cui__day");
@@ -269,7 +266,7 @@ export const createDayPopup = function (options: CreateDayPopupOptions): DayPopu
     cells.forEach((cell) => {
       let mark = indicatorMarks.get(cell);
       if (mark === undefined) {
-        mark = { key: "", dot: cell.querySelector<HTMLElement>(".cui__day-dot"), has: false };
+        mark = { key: "", has: false };
         indicatorMarks.set(cell, mark);
       }
 
@@ -285,7 +282,7 @@ export const createDayPopup = function (options: CreateDayPopupOptions): DayPopu
       if (mark.has === hasContent) return;
       mark.has = hasContent;
 
-      if (mark.dot) mark.dot.hidden = !hasContent;
+      cell.classList.toggle("is-dot", hasContent);
 
       if (dialog) {
         if (hasContent) cell.setAttribute("aria-haspopup", "dialog");

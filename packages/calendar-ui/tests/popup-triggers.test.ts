@@ -662,9 +662,6 @@ describe("popup 控制器句柄", () => {
     const cell = document.createElement("button");
     cell.className = "cui__day";
     cell.dataset.date = "2026-10-1";
-    const dot = document.createElement("span");
-    dot.className = "cui__day-dot";
-    cell.append(dot);
     root.append(cell);
     document.body.append(root);
 
@@ -684,7 +681,10 @@ describe("popup 控制器句柄", () => {
     });
 
     expect(handle.isOpen()).toBe(false);
-    expect(dot.hidden).toBe(false);
+
+    // 绿点由 sync 写入 .is-dot，不再是一个真实节点
+    handle.sync();
+    expect(cell.classList.contains("is-dot")).toBe(true);
 
     cell.click();
     expect(handle.isOpen()).toBe(true);

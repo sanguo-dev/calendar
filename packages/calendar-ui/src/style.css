@@ -562,8 +562,13 @@
   opacity: 0.9;
 }
 
-/* 右上角绿点：这一天有 popup */
-.cui__day-dot {
+/*
+ * 右上角绿点：这一天有 popup
+ *
+ * 用 ::after 画，DOM 里不占节点。没有 .is-dot 的格子连盒子都不会生成，
+ * 折叠行整行 display:none 时同样不生成。
+ */
+.cui__day.is-dot::after {
   position: absolute;
   top: 4px;
   right: 4px;
@@ -571,21 +576,18 @@
   height: 6px;
   border-radius: 50%;
   background: var(--cui-popup-dot);
+  content: "";
   pointer-events: none;
 }
 
-.cui__day-dot[hidden] {
-  display: none;
-}
-
-.cui[data-size="min"] .cui__day-dot {
+.cui[data-size="min"] .cui__day.is-dot::after {
   top: 2px;
   right: 2px;
   width: 4px;
   height: 4px;
 }
 
-.cui[data-size="fill"] .cui__day-dot {
+.cui[data-size="fill"] .cui__day.is-dot::after {
   top: 6px;
   right: 6px;
   width: 7px;

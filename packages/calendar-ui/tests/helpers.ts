@@ -7,11 +7,9 @@ export const cellOf = function (root: HTMLElement, key: string): HTMLButtonEleme
   return cell;
 };
 
-/** 取某一天格子右上角的绿点 */
-export const dotOf = function (root: HTMLElement, key: string): HTMLElement {
-  const dot = cellOf(root, key).querySelector<HTMLElement>(".cui__day-dot");
-  if (!dot) throw new Error(`missing dot ${key}`);
-  return dot;
+/** 某一天是否显示绿点：绿点是 .is-dot 的 ::after，不在 DOM 里 */
+export const hasDot = function (root: HTMLElement, key: string): boolean {
+  return cellOf(root, key).classList.contains("is-dot");
 };
 
 /** 取挂在 body 上的 popup 根节点 */

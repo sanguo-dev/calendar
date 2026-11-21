@@ -34,11 +34,8 @@ export const createDayCell = function (): HTMLButtonElement {
   tag.hidden = true;
   tag.setAttribute("aria-hidden", "true");
 
-  const dot = node("span", "cui__day-dot");
-  dot.hidden = true;
-  dot.setAttribute("aria-hidden", "true");
-
-  cell.append(tag, node("span", "cui__day-num"), node("span", "cui__day-sub"), dot);
+  // 右上角绿点由 .is-dot 的 ::after 画，不占 DOM 节点
+  cell.append(tag, node("span", "cui__day-num"), node("span", "cui__day-sub"));
   return cell;
 };
 
