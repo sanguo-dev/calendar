@@ -1,5 +1,20 @@
 # @sanguo-dev/calendar-ui
 
+## 0.4.1
+
+### Patch Changes
+
+- `CalendarOptions.contentDay` 的语义从「整块覆盖 adapter」改为**字段级补丁**：写了的字段
+  覆盖 adapter 的同名字段，没写的继承，`null` 清除（`subtitle: ""` 也能清空副标题）。
+  返回 `null` / `undefined` / `{}` 都表示这一天完全用 adapter 的内容。
+- 删除 `CalendarOptions.subtitle` 和 `SubtitleRenderer` 类型。它原本是唯一的字段级覆盖入口，
+  现在统一走 `contentDay` 的补丁语义；只改副标题写成 `contentDay: (d) => ({ subtitle: "…" })`，
+  adapter 给的 `badge` / `data` / `popup` 会保留。
+
+### 新特性
+
+- 新增 `DayContentPatch<TData>` 类型并导出：`contentDay` 的返回类型，字段全部可选且可为 `null`。
+
 ## 0.4.0
 
 ### Minor Changes
