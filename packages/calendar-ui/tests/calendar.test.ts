@@ -141,14 +141,14 @@ describe("图标", () => {
   });
 });
 
-describe("自定义 subtitle", () => {
-  it("用户 subtitle 优先于 adapter，null/undefined 回退，空字符串保留", () => {
+describe("contentDay 字段级覆盖", () => {
+  it("写了的字段覆盖 adapter，没写的继承，null 清除", () => {
     const adapter: CalendarAdapter<null> = {
-      id: "subtitle",
+      id: "content",
       contentMonth({ days }) {
         return days.map((date) =>
           date.month === 10 && (date.day === 1 || date.day === 2 || date.day === 3)
-            ? { subtitle: `adapter-${date.day}` }
+            ? { subtitle: `adapter-${date.day}`, badge: { text: "休", tone: "rest" } }
             : null,
         );
       },
@@ -158,10 +158,10 @@ describe("自定义 subtitle", () => {
     const instance = createCalendarUI(host(), {
       initialDate: "2026-10-01",
       adapter,
-      subtitle: (day) => {
-        if (day.day === 1) return "用户-1";
+      contentDay: (day) => {
+        if (day.day === 1) return { subtitle: "用户-1" };
         if (day.day === 2) return null;
-        if (day.day === 3) return "";
+        if (day.day === 3) return { subtitle: "", badge: null };
         return undefined;
       },
       onSelect: (day) => {
@@ -169,12 +169,21 @@ describe("自定义 subtitle", () => {
       },
     });
 
+    // 1 号：只换副标题，adapter 的 badge 保留
     expect(subtitleOf(instance.el, "2026-10-1")).toBe("用户-1");
+    expect(tagOf(instance.el, "2026-10-1")).toBe("休");
+
+    // 2 号：返回 null，完全用 adapter 的
     expect(subtitleOf(instance.el, "2026-10-2")).toBe("adapter-2");
+    expect(tagOf(instance.el, "2026-10-2")).toBe("休");
+
+    // 3 号：空字符串清空副标题，null 清掉 badge
     expect(subtitleOf(instance.el, "2026-10-3")).toBe("");
+    expect(tagOf(instance.el, "2026-10-3")).toBe("");
 
     cellOf(instance.el, "2026-10-1").click();
     expect(picked!.subtitle).toBe("用户-1");
+    expect(picked!.badge?.text).toBe("休");
 
     instance.destroy();
   });
@@ -1042,7 +1051,7 @@ describe("尺寸模板", () => {
     const instance = createCalendarUI(host(), {
       initialDate: new Date(2026, 9, 1),
       size: "min",
-      subtitle: (day) => (withSubtitle && day.day === 15 ? "初八" : null),
+      contentDay: (day) => (withSubtitle && day.day === 15 ? { subtitle: "初八" } : null),
     });
 
     expect(instance.el.classList.contains("cui--sub")).toBe(false);

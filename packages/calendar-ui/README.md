@@ -30,7 +30,6 @@ instance.destroy();
 | `mode`          | `"single" \| "range"`                   | 选择模式，默认 `"single"`             |
 | `months`        | `1 \| 2`                                | 范围模式月数，`2` 为相邻两月          |
 | `animation`     | `CalendarAnimationOptions`              | 动画与折叠配置，默认全关              |
-| `subtitle`      | `SubtitleRenderer`                      | 自定义副标题，优先于 adapter          |
 | `weekStartsOn`  | `0 \| 1`                                | 一周从哪天开始，默认 1                |
 | `locale`        | `CalendarLocale \| CalendarLocaleName`  | 界面语言，默认 `"zh-CN"`              |
 | `theme`         | `"light" \| "dark" \| "auto"`           | 主题，默认 `"auto"`                   |
@@ -101,18 +100,20 @@ const instance = createCalendarUI(container, {
 - `prefers-reduced-motion: reduce` 下关闭过渡；
 - 也可以通过 `.cui` 的 `--cui-month-duration`、`--cui-collapse-duration` 等 CSS 变量覆盖。
 
-## 自定义 subtitle
+## 单天内容
+
+`contentDay` 返回**补丁**：写了的字段覆盖 adapter 的同名字段，没写的继承，`null` 清除。
 
 ```ts
 const instance = createCalendarUI(container, {
-  subtitle: (day) => (day.month === 10 && day.day === 1 ? "国庆" : null),
+  contentDay: (day) => (day.month === 10 && day.day === 1 ? { subtitle: "国庆" } : null),
 });
 ```
 
-- 用户 `subtitle` 优先于 `adapter.subtitle`；
-- 返回 `null` / `undefined` 时回退 adapter；
-- 返回 `""` 时明确隐藏；
-- `onSelect` 的 `day.subtitle` 是最终值。
+- 只写 `subtitle` 时，adapter 给这一天的 `badge` / `data` / `popup` 都保留；
+- `subtitle: ""` 清空副标题，`badge: null` / `popup: null` 去掉标记和弹层；
+- 返回 `null` / `undefined` / `{}` 表示这一天完全用 adapter 的内容；
+- `onSelect` 的 `day.subtitle` 是合并后的最终值。
 
 ## 日期格 popup
 
@@ -282,7 +283,7 @@ interface CalendarAdapter<TData = unknown> {
 
 ## 路线图
 
-后续功能（翻月动画、折叠当前行、范围选择、min/max、禁用日期、自定义 subtitle）记录在 [TODO.md](TODO.md)。
+后续功能（翻月动画、折叠当前行、范围选择、min/max、禁用日期、单天内容）记录在 [TODO.md](TODO.md)。
 
 ## 开发
 

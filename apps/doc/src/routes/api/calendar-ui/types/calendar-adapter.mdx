@@ -15,7 +15,6 @@ import type {
   MonthInput,
   DayContent,
   CalendarBadge,
-  SubtitleRenderer,
 } from "@sanguo-dev/calendar-ui";
 ```
 
@@ -49,7 +48,6 @@ interface CalendarBadge {
   tone?: string;
 }
 
-type SubtitleRenderer = (day: CalendarDate) => string | null | undefined;
 type DayContentRenderer<TData = unknown> = (day: CalendarDate) => DayContent<TData> | null;
 ```
 
@@ -92,7 +90,7 @@ type DayContentRenderer<TData = unknown> = (day: CalendarDate) => DayContent<TDa
 | `text` | `string` | 显示文字，例如 `"休"`                          |
 | `tone` | `string` | 写入 `data-tone`，默认皮肤支持 `rest` / `work` |
 
-`SubtitleRenderer`：返回 `null` / `undefined` 时回退到适配器的 `subtitle`，返回 `""` 时明确隐藏副标题。
+`contentDay` 返回的补丁按字段合并：写了的字段覆盖这里，没写的继承，`null` 清除（`subtitle: ""` 也能清空副标题）。
 
 ## 用法
 
@@ -113,6 +111,6 @@ createCalendarUI(container, { adapter });
 
 - 返回值按索引与 `input.days` 对齐，没有内容的位置返回 `null`；
 - 每次换月、选中、重绘都会调用，适配器应自行缓存重算结果；
-- `subtitle` 选项的优先级高于适配器返回的 `subtitle`。
+- 用户 `contentDay` 和适配器共用这一份 `DayContent` 契约，字段级覆盖。
 
 第三方适配器示例见 [第三方适配器](/calendar-ui/custom)。

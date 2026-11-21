@@ -42,7 +42,6 @@ interface CalendarOptions<TData = null> {
   renderHeader?: HeaderRenderer;
   popup?: CalendarPopupOptions;
   adapter?: CalendarAdapter<TData>;
-  subtitle?: SubtitleRenderer;
   onSelect?: (day: CalendarDay<TData>) => void;
   onRangeChange?: (range: CalendarRange) => void;
   onMonthChange?: (year: number, month: number) => void;
@@ -71,7 +70,6 @@ interface CalendarAnimationOptions {
 | `renderHeader`  | `HeaderRenderer`                       | -          | 自定义头部                           |
 | `popup`         | `CalendarPopupOptions`                 | 默认交互   | 弹层触发 / 定位 / 语义；不传用 click |
 | `adapter`       | `CalendarAdapter<TData>`               | -          | 内容适配器                           |
-| `subtitle`      | `SubtitleRenderer`                     | -          | 自定义副标题，优先于 adapter         |
 | `onSelect`      | `(day) => void`                        | -          | 选中日期                             |
 | `onRangeChange` | `(range) => void`                      | -          | 范围变化                             |
 | `onMonthChange` | `(year, month) => void`                | -          | 换月                                 |
@@ -223,18 +221,22 @@ createCalendarUI(container, {
 - `prefers-reduced-motion: reduce` 下自动关闭；
 - 可通过 CSS 变量覆盖（`--cui-month-duration`、`--cui-collapse-duration` 等）。
 
-## subtitle
+## 单天内容
+
+`contentDay` 返回一个**补丁**：写了的字段覆盖 adapter 的同名字段，没写的继承，`null` 清除。
 
 ```ts
 createCalendarUI(container, {
-  subtitle: (day) => {
-    if (day.month === 10 && day.day === 1) return "国庆";
+  contentDay: (day) => {
+    if (day.month === 10 && day.day === 1) return { subtitle: "国庆", badge: null };
     return null;
   },
 });
 ```
 
-优先级：用户 subtitle 字符串 > adapter subtitle > 空字符串。返回 `null` / `undefined` 回退 adapter，返回 `""` 明确隐藏。
+- 只写 `subtitle` 时，adapter 给这一天的 `badge` / `data` / `popup` 都保留；
+- `subtitle: ""` 清空副标题，`badge: null` / `popup: null` 去掉标记和弹层；
+- 返回 `null` / `undefined` / `{}` 表示这一天完全用 adapter 的内容。
 
 ## 日期格 popup
 

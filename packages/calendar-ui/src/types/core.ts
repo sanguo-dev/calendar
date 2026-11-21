@@ -9,7 +9,6 @@ import type {
   DayPopupPlacement,
   DayPopupTrigger,
   HeaderRenderer,
-  SubtitleRenderer,
   WeekStartsOn,
   YearMonth,
 } from "./calendar";
@@ -64,7 +63,6 @@ export interface CalendarConfig<TData = null> {
   today: Date;
   mode: CalendarMode;
   requestedMonths: 1 | 2;
-  subtitle?: SubtitleRenderer;
   /** 是否渲染头部；为 false 时内部不创建头部 */
   showHeader: boolean;
   renderHeader?: HeaderRenderer;

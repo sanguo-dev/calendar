@@ -21,6 +21,7 @@ export type {
   CalendarTheme,
   CollapseAnimationOptions,
   DayContent,
+  DayContentPatch,
   DayContentRenderer,
   DayPopupContent,
   DayPopupItem,
@@ -31,7 +32,6 @@ export type {
   HeaderRenderer,
   MonthInput,
   SlideAnimationOptions,
-  SubtitleRenderer,
   WeekStartsOn,
   YearMonth,
 } from "./types";

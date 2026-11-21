@@ -21,8 +21,10 @@ afterEach(() => {
 });
 
 type CreateOptions = Omit<CalendarOptions, "popup" | "contentDay"> & {
-  /** false 表示完全不启用 popup 模块 */
+  /** false 表示完全不写 popup 选项 */
   popup?: CalendarPopupOptions | false;
+  /** 需要字段级覆盖时用它，和第一个参数合并 */
+  contentDay?: DayContentRenderer<null>;
 };
 
 const create = function (
@@ -35,7 +37,7 @@ const create = function (
     initialDate: options.initialDate ?? "2026-10-01",
     ...options,
     popup: options.popup === false ? undefined : (options.popup ?? {}),
-    contentDay,
+    contentDay: options.contentDay ?? contentDay,
   });
   cleanups.push(() => {
     instance.destroy();
@@ -329,7 +331,7 @@ describe("日期格 popup", () => {
     expect(hasDot(instance.el, "2026-10-2")).toBe(false);
   });
 
-  it("contentDay 整块覆盖 adapter 的那一天", () => {
+  it("contentDay 只覆盖写了的字段，adapter 的其余内容保留", () => {
     const adapter: CalendarAdapter<null> = {
       id: "test-adapter",
       contentMonth: ({ days }) =>
@@ -344,9 +346,9 @@ describe("日期格 popup", () => {
       { adapter, popup: false },
     );
 
-    // 整块覆盖：subtitle 用 contentDay 的，adapter 的 badge 随之丢掉
+    // 只换副标题，adapter 的 badge 从同名字段继承
     expect(subtitleOf(instance.el, "2026-10-1")).toBe("contentDay 副标题");
-    expect(tagOf(instance.el, "2026-10-1")).toBe("");
+    expect(tagOf(instance.el, "2026-10-1")).toBe("休");
   });
 
   it("contentDay 返回 null 时回退到 adapter", () => {
@@ -365,13 +367,26 @@ describe("日期格 popup", () => {
     expect(tagOf(instance.el, "2026-10-1")).toBe("休");
   });
 
-  it("subtitle 选项仍然优先于内容里的 subtitle", () => {
+  it("contentDay 只覆盖写了的字段，adapter 的 popup 保留", () => {
+    const adapter: CalendarAdapter<null> = {
+      id: "test-adapter",
+      contentMonth: ({ days }) =>
+        days.map((date) =>
+          date.month === 10 && date.day === 1
+            ? { subtitle: "基础", popup: { items: [["全天", "内容"]] } }
+            : null,
+        ),
+    };
     const instance = create(
-      (day) => (day.month === 10 && day.day === 1 ? { subtitle: "内容" } : null),
-      { subtitle: (day) => (day.month === 10 && day.day === 1 ? "选项" : null), popup: false },
+      (day) => (day.month === 10 && day.day === 1 ? { subtitle: "覆盖" } : null),
+      { adapter },
     );
 
-    expect(subtitleOf(instance.el, "2026-10-1")).toBe("选项");
+    expect(subtitleOf(instance.el, "2026-10-1")).toBe("覆盖");
+    expect(hasDot(instance.el, "2026-10-1")).toBe(true);
+
+    cellOf(instance.el, "2026-10-1").click();
+    expect(itemsOf()).toEqual(["全天内容"]);
   });
 
   it("不传 popup 选项也按默认交互生效（click + dialog）", () => {

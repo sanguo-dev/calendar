@@ -33,7 +33,6 @@ export const createDayBuilder = function <TData = null>(
       adapter: config.adapter,
       contentDay: config.contentDay,
       isDisabled: disabled,
-      subtitle: config.subtitle,
     });
   };
 };
@@ -69,7 +68,7 @@ export const createRenderer = function <TData = null>(
   /** 是否已经出现过副标题。 */
   let hasSubtitle = false;
   /** 没有适配器也没有自定义副标题时，42 个格子不可能有副标题，连扫描都省掉 */
-  const canHaveSubtitle = config.adapter !== undefined || config.subtitle !== undefined;
+  const canHaveSubtitle = config.adapter !== undefined || config.contentDay !== undefined;
   /** 上次写面板 aria-label 时的年月；只选不换月时整段跳过 */
   let labelKey = "";
 

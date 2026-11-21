@@ -6,7 +6,7 @@ import CalendarUIPopup from "../../components/demo/calendar-ui-popup";
 
 # 日期格 popup
 
-内容写在**一天的内容**里：`contentDay(day)` 返回对象时带上 `popup`，这一天就有弹层、也有绿点；返回 `null` 或没有 `popup` 字段，就没有。`popup` 选项本身只负责「怎么打开、放哪、什么语义」。
+内容写在**一天的内容**里：`contentDay(day)` 返回的补丁带上 `popup`，这一天就有弹层、也有绿点；没有 `popup` 字段就没有。`popup` 选项本身只负责「怎么打开、放哪、什么语义」。
 
 ```ts
 createCalendarUI(host, {
@@ -405,7 +405,7 @@ export default function CalendarUIPopupCustom() {
 
 ## 渲染规则
 
-内容挂在「一天的内容」上，和 badge / subtitle 是同一个返回值：
+内容挂在「一天的补丁」上，和 badge / subtitle 是同一个返回值：
 
 ```ts
 contentDay(day: CalendarDate): DayContent | null;

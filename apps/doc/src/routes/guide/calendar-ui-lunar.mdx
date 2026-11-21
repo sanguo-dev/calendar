@@ -51,10 +51,10 @@ createCalendarLunar(container, {
 
 ## 副标题与标记
 
-- `subtitle` 优先级：节气 > 农历节日 > 公历节日 > 农历日；
+- `subtitle` 优先级：节气 > 农历节日 > 公历节日 > 农历初一显示月名 > 农历日；
 - `badge`：`xiu` 显示休，`ban` 显示班；
 - 普通周末不会自动显示休；
-- 用户 `CalendarOptions.subtitle` 仍然优先于 adapter 的 subtitle。
+- 想改某一天的副标题用 `CalendarOptions.contentDay`，返回 `{ subtitle: "…" }` 只覆盖这一个字段，休/班标记仍然保留。
 
 ## day.data
 

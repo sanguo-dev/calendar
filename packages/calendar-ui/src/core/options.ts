@@ -141,7 +141,6 @@ export const resolveOptions = function <TData = null>(
     today,
     mode,
     requestedMonths,
-    subtitle: options.subtitle,
     showHeader: options.header !== false,
     renderHeader: options.renderHeader,
     popup,

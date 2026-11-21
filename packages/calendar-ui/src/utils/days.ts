@@ -55,14 +55,16 @@ export const buildDays = function <TData = null>(
   const hasRange = startKey !== 0 && endKey !== 0;
 
   return dates.map((date, index) => {
-    // 单天回调整块覆盖 adapter；返回 null（或 undefined）表示这一天交给 adapter
-    const fromCallback = options.contentDay?.(date) ?? null;
-    if (fromCallback !== null && typeof fromCallback !== "object") {
+    // 字段级补丁：写了的覆盖 adapter，没写的继承
+    const base = fromAdapter[index] ?? null;
+    const patch = options.contentDay?.(date) ?? null;
+    if (patch !== null && typeof patch !== "object") {
       throw new TypeError("[calendar-ui] contentDay(day) 必须返回对象或 null");
     }
-    const content = fromCallback ?? fromAdapter[index] ?? null;
+    const content = base === null ? patch : patch === null ? base : { ...base, ...patch };
+
     const badge = content?.badge ?? null;
-    const subtitle = options.subtitle?.(date) ?? content?.subtitle ?? "";
+    const subtitle = content?.subtitle ?? "";
     const popup = content?.popup ?? null;
 
     const key = dateKeyOf(date.year, date.month, date.day);
@@ -71,7 +73,8 @@ export const buildDays = function <TData = null>(
     const isRangeEnd = key === endKey;
     const isInRange = hasRange && key >= startKey && key <= endKey;
 
-    let ariaLabel = content?.ariaLabel;
+    // 补丁里的 null 表示「清除这个字段」，而默认 aria-label 只在没给时才拼
+    let ariaLabel = content?.ariaLabel ?? undefined;
     if (ariaLabel === undefined) {
       // 拼三段文案；不给默认的「无标记无副标题」路径分配数组
       let text = dateStringKey(date.year, date.month, date.day);

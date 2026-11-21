@@ -29,7 +29,6 @@ interface CalendarOptions<TData = null> {
   theme?: CalendarTheme;
   size?: CalendarSize;
   animation?: CalendarAnimationOptions;
-  subtitle?: SubtitleRenderer;
   header?: boolean;
   renderHeader?: HeaderRenderer;
   popup?: CalendarPopupOptions;
@@ -42,28 +41,27 @@ interface CalendarOptions<TData = null> {
 
 ## 字段
 
-| 选项            | 类型                                    | 默认       | 说明                                                         |
-| --------------- | --------------------------------------- | ---------- | ------------------------------------------------------------ |
-| `initialDate`   | `CalendarDateInput`                     | 今天       | 初始日期；超出约束或被禁用时取最近的可选日期                 |
-| `minDate`       | `CalendarDateInput`                     | -          | 最小可选日期（含当天）                                       |
-| `maxDate`       | `CalendarDateInput`                     | -          | 最大可选日期（含当天）                                       |
-| `disabledDates` | `readonly CalendarDateInput[]`          | `[]`       | 禁止选中的日期，按本地年月日比较                             |
-| `mode`          | `CalendarMode`                          | `"single"` | 单选 / 范围模式                                              |
-| `months`        | `1 \| 2`                                | `1`        | 范围模式下并排显示的月数；边界不足两个月时退化为 1           |
-| `onRangeChange` | `(range: CalendarRange) => void`        | -          | 范围变化时触发                                               |
-| `weekStartsOn`  | `WeekStartsOn`                          | `1`        | 一周起始日：`0` 为周日，`1` 为周一                           |
-| `locale`        | `CalendarLocale \| CalendarLocaleName`  | `"zh-CN"`  | 界面语言；可传自定义语言包                                   |
-| `theme`         | `CalendarTheme`                         | `"auto"`   | 主题；`auto` 跟随最近的 `data-theme`，没有则跟随系统         |
-| `size`          | `CalendarSize`                          | `"normal"` | 尺寸模板：`min` / `normal` / `fill`                          |
-| `animation`     | `CalendarAnimationOptions`              | -          | 动画配置；不传时翻月直接切换、不显示折叠箭头                 |
-| `subtitle`      | `SubtitleRenderer`                      | -          | 自定义副标题，优先于适配器；返回 `null` / `undefined` 时回退 |
-| `header`        | `boolean`                               | `true`     | 是否渲染头部与月份选择层                                     |
-| `renderHeader`  | `HeaderRenderer`                        | -          | 自定义头部，替换默认的「‹ 标题 ›」                           |
-| `popup`         | `CalendarPopupOptions`                  | 默认交互   | 弹层的触发 / 定位 / 语义；不传用 click + dialog + auto       |
-| `onSelect`      | `(day: CalendarDay<TData>) => void`     | -          | 选中某一天或范围变化后触发                                   |
-| `onMonthChange` | `(year: number, month: number) => void` | -          | 翻月时触发：`setMonth`、`prevMonth`、`nextMonth`、头部翻页   |
-| `adapter`       | `CalendarAdapter<TData>`                | -          | 日期格内容适配器；不传时只渲染公历                           |
-| `contentDay`    | `DayContentRenderer<TData>`             | -          | 单天内容；返回对象整块覆盖 adapter，返回 `null` 时回退       |
+| 选项            | 类型                                    | 默认       | 说明                                                       |
+| --------------- | --------------------------------------- | ---------- | ---------------------------------------------------------- |
+| `initialDate`   | `CalendarDateInput`                     | 今天       | 初始日期；超出约束或被禁用时取最近的可选日期               |
+| `minDate`       | `CalendarDateInput`                     | -          | 最小可选日期（含当天）                                     |
+| `maxDate`       | `CalendarDateInput`                     | -          | 最大可选日期（含当天）                                     |
+| `disabledDates` | `readonly CalendarDateInput[]`          | `[]`       | 禁止选中的日期，按本地年月日比较                           |
+| `mode`          | `CalendarMode`                          | `"single"` | 单选 / 范围模式                                            |
+| `months`        | `1 \| 2`                                | `1`        | 范围模式下并排显示的月数；边界不足两个月时退化为 1         |
+| `onRangeChange` | `(range: CalendarRange) => void`        | -          | 范围变化时触发                                             |
+| `weekStartsOn`  | `WeekStartsOn`                          | `1`        | 一周起始日：`0` 为周日，`1` 为周一                         |
+| `locale`        | `CalendarLocale \| CalendarLocaleName`  | `"zh-CN"`  | 界面语言；可传自定义语言包                                 |
+| `theme`         | `CalendarTheme`                         | `"auto"`   | 主题；`auto` 跟随最近的 `data-theme`，没有则跟随系统       |
+| `size`          | `CalendarSize`                          | `"normal"` | 尺寸模板：`min` / `normal` / `fill`                        |
+| `animation`     | `CalendarAnimationOptions`              | -          | 动画配置；不传时翻月直接切换、不显示折叠箭头               |
+| `header`        | `boolean`                               | `true`     | 是否渲染头部与月份选择层                                   |
+| `renderHeader`  | `HeaderRenderer`                        | -          | 自定义头部，替换默认的「‹ 标题 ›」                         |
+| `popup`         | `CalendarPopupOptions`                  | 默认交互   | 弹层的触发 / 定位 / 语义；不传用 click + dialog + auto     |
+| `onSelect`      | `(day: CalendarDay<TData>) => void`     | -          | 选中某一天或范围变化后触发                                 |
+| `onMonthChange` | `(year: number, month: number) => void` | -          | 翻月时触发：`setMonth`、`prevMonth`、`nextMonth`、头部翻页 |
+| `adapter`       | `CalendarAdapter<TData>`                | -          | 日期格内容适配器；不传时只渲染公历                         |
+| `contentDay`    | `DayContentRenderer<TData>`             | -          | 单天内容补丁：写了的覆盖 adapter，没写的继承，`null` 清除  |
 
 `popup` 的字段与 `render` 的返回项见 [CalendarPopupOptions](/api/calendar-ui/types/calendar-popup)。
 

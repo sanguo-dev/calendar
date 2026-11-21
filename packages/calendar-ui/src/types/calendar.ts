@@ -32,9 +32,6 @@ export interface CalendarRange {
   end: Date | null;
 }
 
-/** 自定义副标题：返回 null/undefined 时回退到 adapter 的 subtitle */
-export type SubtitleRenderer = (day: CalendarDate) => string | null | undefined;
-
 /** 翻月滑动动画；传了 slide 就开启，不传就是直接切换 */
 export interface SlideAnimationOptions {
   /** 动画时长，单位 ms，默认 220 */
@@ -112,8 +109,23 @@ export interface DayContent<TData = unknown> {
   popup?: DayPopupContent;
 }
 
-/** 单天内容回调：返回 null 表示这一天交给 adapter（或什么都没有） */
-export type DayContentRenderer<TData = unknown> = (day: CalendarDate) => DayContent<TData> | null;
+/**
+ * `DayContent` 的补丁
+ *
+ * 规则只有一条：**写了的字段覆盖，没写的继承，`null` 清除**。
+ */
+export type DayContentPatch<TData = unknown> = {
+  [K in keyof DayContent<TData>]?: DayContent<TData>[K] | null;
+};
+
+/**
+ * 单天内容回调：返回补丁覆盖 adapter 的同名字段
+ *
+ * 返回 `null` / `undefined` / `{}` 都表示这一天完全用 adapter 的内容。
+ */
+export type DayContentRenderer<TData = unknown> = (
+  day: CalendarDate,
+) => DayContentPatch<TData> | null | undefined;
 
 /** 每次渲染月视图时传给适配器的上下文 */
 export interface MonthInput {
@@ -289,13 +301,11 @@ export interface CalendarOptions<TData = null> {
    * 传了 `collapse` 才显示折叠箭头。
    */
   animation?: CalendarAnimationOptions;
-  /** 自定义副标题；优先于 adapter.subtitle，返回 null/undefined 时回退 */
-  subtitle?: SubtitleRenderer;
   /** 是否渲染头部，默认 true；为 false 时不创建头部和月份选择层 */
   header?: boolean;
   /** 自定义头部，替换默认的 ‹ 标题 › */
   renderHeader?: HeaderRenderer;
-  /** 日期格 popup；不传则不启用 */
+  /** 日期格弹层的交互配置；不传用默认值（click + dialog + auto 定位） */
   popup?: CalendarPopupOptions;
   /** 选中某一天时触发 */
   onSelect?: (day: CalendarDay<TData>) => void;
@@ -304,12 +314,12 @@ export interface CalendarOptions<TData = null> {
   /** 日历适配器；不传时就是纯公历 */
   adapter?: CalendarAdapter<TData>;
   /**
-   * 单天内容；返回对象表示这一天用这个对象的全部字段，返回 null 表示交给 adapter
+   * 单天内容的补丁：写了的字段覆盖 adapter 的同名字段，没写的继承，`null` 清除
    *
    * 和 `adapter.contentMonth` 是同一份 `DayContent` 契约：adapter 负责整月，
-   * 这个回调负责某一天，两者可以同时用，单天回调优先（整块覆盖，不做逐字段合并）。
+   * 这个回调负责某一天。没有 adapter 时它就是全部内容来源。
    *
-   * 每次重绘会对每个可见格子调用一次（单月 42 次），所以这里只做「有没有」的判断；
+   * 每次重绘会对每个可见格子调用一次（单月 42 次），所以这里只做轻量的字段覆盖；
    * popup 内容要物化时用 `popup.items: () => [...]` 推迟到打开弹层。
    */
   contentDay?: DayContentRenderer<TData>;

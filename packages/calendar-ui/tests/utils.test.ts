@@ -470,7 +470,7 @@ describe("buildDays", () => {
     expect(days.find((item) => item.month === 10 && item.day === 2)?.ariaLabel).toBe("自定义标签");
   });
 
-  it("自定义副标题优先，null / undefined 回退到 adapter", () => {
+  it("contentDay 按字段覆盖 adapter，null 清除", () => {
     const days = buildDays({
       ...baseOptions(),
       adapter: {
@@ -478,20 +478,27 @@ describe("buildDays", () => {
         contentMonth: ({ days: dates }) =>
           dates.map((date) =>
             date.month === 10 && date.day >= 1 && date.day <= 3
-              ? { subtitle: `adapter-${date.day}` }
+              ? { subtitle: `adapter-${date.day}`, badge: { text: "休" } }
               : null,
           ),
       },
-      subtitle: (date) => {
-        if (date.day === 1) return "custom";
-        if (date.day === 2) return "";
+      contentDay: (date) => {
+        if (date.day === 1) return { subtitle: "custom" };
+        if (date.day === 2) return { subtitle: "", badge: null };
         return undefined;
       },
     });
 
-    expect(days.find((item) => item.month === 10 && item.day === 1)?.subtitle).toBe("custom");
-    expect(days.find((item) => item.month === 10 && item.day === 2)?.subtitle).toBe("");
-    expect(days.find((item) => item.month === 10 && item.day === 3)?.subtitle).toBe("adapter-3");
+    const dayOf = (day: number) => days.find((item) => item.month === 10 && item.day === day);
+    expect(dayOf(1)?.subtitle).toBe("custom");
+    // 只覆盖 subtitle，badge 从 adapter 继承
+    expect(dayOf(1)?.badge?.text).toBe("休");
+    // 空字符串清空副标题，null 清掉 badge
+    expect(dayOf(2)?.subtitle).toBe("");
+    expect(dayOf(2)?.badge).toBeNull();
+    // 没返回补丁就完全用 adapter
+    expect(dayOf(3)?.subtitle).toBe("adapter-3");
+    expect(dayOf(3)?.badge?.text).toBe("休");
   });
 
   it("语言包没有 disabledLabel 时使用内置「不可选」", () => {
