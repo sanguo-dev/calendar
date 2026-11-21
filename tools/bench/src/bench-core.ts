@@ -227,10 +227,8 @@ function createVanilla(host: HTMLElement): Handle {
       num.className = "cui__day-num";
       const sub = document.createElement("span");
       sub.className = "cui__day-sub";
-      const dot = document.createElement("span");
-      dot.className = "cui__day-dot";
-      dot.hidden = true;
-      cell.append(tag, num, sub, dot);
+      // 绿点和库一样用 .is-dot 的 ::after，不占节点
+      cell.append(tag, num, sub);
       rowEl.append(cell);
       cells.push(cell);
     }

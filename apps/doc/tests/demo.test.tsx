@@ -120,13 +120,11 @@ describe("demo components", () => {
     expect(container.querySelectorAll(".cui.demo-calendar--custom")).toHaveLength(1);
 
     const cell = container.querySelector<HTMLButtonElement>('.cui__day[data-date="2026-10-1"]');
-    expect(cell?.querySelector(".cui__day-dot")?.hasAttribute("hidden")).toBe(false);
+    expect(cell?.classList.contains("is-dot")).toBe(true);
     // 只有有 popup 的日期才有绿点
     expect(
-      container
-        .querySelector('.cui__day[data-date="2026-10-2"] .cui__day-dot')
-        ?.hasAttribute("hidden"),
-    ).toBe(true);
+      container.querySelector('.cui__day[data-date="2026-10-2"]')?.classList.contains("is-dot"),
+    ).toBe(false);
 
     cell?.click();
     flush();
